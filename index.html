@@ -13,6 +13,10 @@
       <div class="brand-badge">SESI</div>
       <h1>Registro Diário de Alunos</h1>
       <p>Controle de ocorrências, atendimentos, tarefas, uniforme e comunicação com responsáveis.</p>
+      <div class="login-tabs">
+        <button type="button" id="tabLogin" class="tab active">Entrar</button>
+        <button type="button" id="tabSetup" class="tab">Criar usuário</button>
+      </div>
       <form id="loginForm">
         <label>E-mail</label>
         <input id="loginEmail" type="email" required placeholder="seuemail@escola.com" />
@@ -20,7 +24,21 @@
         <input id="loginPassword" type="password" required placeholder="••••••••" />
         <button type="submit">Entrar</button>
       </form>
-      <small>Primeiro acesso: crie o usuário no Firebase Authentication.</small>
+      <form id="setupForm" class="hidden">
+        <label>Nome</label>
+        <input id="setupNome" required placeholder="Nome do usuário" />
+        <label>E-mail</label>
+        <input id="setupEmail" type="email" required placeholder="email@escola.com" />
+        <label>Senha</label>
+        <input id="setupPassword" type="password" required minlength="6" placeholder="mínimo 6 caracteres" />
+        <label>Perfil</label>
+        <select id="setupPerfil">
+          <option value="disciplinario">Disciplinário</option>
+          <option value="admin">Administrador</option>
+        </select>
+        <button type="submit">Criar usuário</button>
+      </form>
+      <small id="loginHelp">Entre com o e-mail e senha cadastrados no programa.</small>
     </div>
   </section>
 

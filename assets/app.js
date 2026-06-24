@@ -1,6 +1,6 @@
 import { firebaseConfig, emailJsConfig } from '../firebase-config.js';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
 import { getFirestore, collection, doc, getDoc, setDoc, addDoc, getDocs, query, where, orderBy, limit, serverTimestamp, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
 
 const app = initializeApp(firebaseConfig);
@@ -44,7 +44,19 @@ function atualizarResponsaveis(){ const a=alunoSelecionado(); if(!a) return; con
 async function carregarAlunos(){ const snap=await getDocs(query(collection(db,colecoes.alunos), orderBy('turma'))); state.alunos=snap.docs.map(d=>({id:d.id,...d.data()})); preencherTurmas(); preencherAlunos(); renderAlunos(); $('#statAlunos').textContent=state.alunos.length; }
 async function carregarConfig(){ const ref=doc(db,colecoes.config,'geral'); const s=await getDoc(ref); state.config=s.exists()?s.data():{}; $('#configCopia').value=state.config.emailCopia||''; $('#configUnidade').value=state.config.unidade||''; }
 async function salvarConfig(){ await setDoc(doc(db,colecoes.config,'geral'),{emailCopia:$('#configCopia').value.trim(),unidade:$('#configUnidade').value.trim(),updatedAt:serverTimestamp()},{merge:true}); toast('Configurações salvas.'); carregarConfig(); }
-async function carregarPerfil(){ const ref=doc(db,colecoes.usuarios,state.user.uid); const s=await getDoc(ref); if(s.exists()) state.profile=s.data(); else { state.profile={nome:state.user.email,role:'admin'}; await setDoc(ref,{...state.profile,email:state.user.email,createdAt:serverTimestamp()}); } $('#userLabel').textContent=`${state.user.email} • ${state.profile.role}`; $$('.admin-only').forEach(e=>e.style.display=state.profile.role==='admin'?'block':'none'); }
+async function carregarPerfil(){
+  const ref=doc(db,colecoes.usuarios,state.user.uid);
+  const s=await getDoc(ref);
+  if(s.exists()) {
+    state.profile=s.data();
+  } else {
+    state.profile={nome:state.user.email, email:state.user.email, role:'disciplinario', ativo:true};
+    await setDoc(ref,{...state.profile,createdAt:serverTimestamp()},{merge:true});
+  }
+  if(state.profile.ativo===false){ toast('Usuário desativado. Procure o administrador.','error'); await signOut(auth); return; }
+  $('#userLabel').textContent=`${state.user.email} • ${state.profile.role}`;
+  $$('.admin-only').forEach(e=>e.style.display=state.profile.role==='admin'?'block':'none');
+}
 
 async function salvarRegistro(ev){ ev.preventDefault(); const aluno=alunoSelecionado(); if(!aluno){ toast('Selecione um aluno.','error'); return; }
   const dados={}; new FormData($('#registroForm')).forEach((v,k)=>dados[k]=v);
@@ -69,7 +81,38 @@ async function importarHistorico(){ await importarJson('data/registros-historico
 function exportarCsv(){ const rows=state.historico; if(!rows.length){toast('Nada para exportar.','error');return;} const cols=[...new Set(rows.flatMap(r=>Object.keys(r)))]; const csv=[cols.join(';'),...rows.map(r=>cols.map(c=>`"${String(r[c]??'').replace(/"/g,'""')}"`).join(';'))].join('\n'); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download='registro-diario-ocorrencias.csv'; a.click(); }
 function trocarPagina(p){ $$('.nav').forEach(b=>b.classList.toggle('active',b.dataset.page===p)); $$('.page').forEach(s=>s.classList.toggle('active',s.id===`page-${p}`)); $('#pageTitle').textContent={novo:'Novo registro',historico:'Histórico',alunos:'Alunos',admin:'Admin'}[p]||'Registro'; $('.sidebar').classList.remove('open'); if(p==='historico') atualizarHistorico(); if(p==='alunos') renderAlunos(); }
 
+
+async function existeUsuarioAdmin(){
+  const snap = await getDocs(query(collection(db,colecoes.usuarios), where('role','==','admin'), limit(1)));
+  return !snap.empty;
+}
+async function criarContaInicial(ev){
+  ev.preventDefault();
+  const nome=$('#setupNome').value.trim();
+  const email=$('#setupEmail').value.trim();
+  const senha=$('#setupPassword').value;
+  const perfil=$('#setupPerfil').value;
+  if(!nome || !email || senha.length<6){ toast('Informe nome, e-mail e senha com pelo menos 6 caracteres.','error'); return; }
+  try{
+    const adminExiste = await existeUsuarioAdmin();
+    const cred = await createUserWithEmailAndPassword(auth,email,senha);
+    const role = adminExiste ? perfil : 'admin';
+    await setDoc(doc(db,colecoes.usuarios,cred.user.uid),{nome,email,role,ativo:true,createdAt:serverTimestamp()},{merge:true});
+    toast(adminExiste ? 'Usuário criado com sucesso.' : 'Primeiro administrador criado com sucesso.');
+  }catch(err){ toast('Erro ao criar usuário: '+(err?.message||err),'error'); }
+}
+function mostrarAbaLogin(aba){
+  $('#loginForm').classList.toggle('hidden',aba!=='login');
+  $('#setupForm').classList.toggle('hidden',aba!=='setup');
+  $('#tabLogin').classList.toggle('active',aba==='login');
+  $('#tabSetup').classList.toggle('active',aba==='setup');
+  $('#loginHelp').textContent = aba==='login' ? 'Entre com o e-mail e senha cadastrados no programa.' : 'No primeiro cadastro, o sistema cria automaticamente o usuário administrador.';
+}
+
 $('#loginForm').addEventListener('submit',async e=>{ e.preventDefault(); try{ await signInWithEmailAndPassword(auth,$('#loginEmail').value,$('#loginPassword').value); }catch(err){toast('Erro no login: '+err.message,'error')} });
+$('#setupForm').addEventListener('submit',criarContaInicial);
+$('#tabLogin').onclick=()=>mostrarAbaLogin('login');
+$('#tabSetup').onclick=()=>mostrarAbaLogin('setup');
 $('#logoutBtn').onclick=()=>signOut(auth); $('#menuBtn').onclick=()=>$('.sidebar').classList.toggle('open'); $$('.nav').forEach(b=>b.onclick=()=>trocarPagina(b.dataset.page));
 $('#turmaSelect').onchange=preencherAlunos; $('#alunoSelect').onchange=atualizarResponsaveis; $('#registroForm').onsubmit=salvarRegistro; $('#limparForm').onclick=()=>$('#registroForm').reset(); $('#aplicarFiltros').onclick=renderHistorico; $('#exportarCsv').onclick=exportarCsv; $('#salvarAluno').onclick=salvarAluno; $('#importarAlunos').onclick=importarAlunos; $('#importarHistorico').onclick=importarHistorico; $('#salvarConfig').onclick=salvarConfig;
 onAuthStateChanged(auth,async user=>{ state.user=user; $('#loginScreen').classList.toggle('hidden',!!user); $('#app').classList.toggle('hidden',!user); if(user){ await initSeeds(); await carregarPerfil(); await carregarConfig(); await carregarAlunos(); await atualizarHistorico(); } });
