@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Registro Diário de Alunos</title>
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+  <div id="toast"></div>
+  <section id="loginScreen" class="login-screen">
+    <div class="login-card">
+      <div class="brand-badge">SESI</div>
+      <h1>Registro Diário de Alunos</h1>
+      <p>Controle de ocorrências, atendimentos, tarefas, uniforme e comunicação com responsáveis.</p>
+      <form id="loginForm">
+        <label>E-mail</label>
+        <input id="loginEmail" type="email" required placeholder="seuemail@escola.com" />
+        <label>Senha</label>
+        <input id="loginPassword" type="password" required placeholder="••••••••" />
+        <button type="submit">Entrar</button>
+      </form>
+      <small>Primeiro acesso: crie o usuário no Firebase Authentication.</small>
+    </div>
+  </section>
+
+  <main id="app" class="app hidden">
+    <aside class="sidebar">
+      <div class="logo">Registro<br><strong>Diário</strong></div>
+      <button class="nav active" data-page="novo">Novo registro</button>
+      <button class="nav" data-page="historico">Histórico</button>
+      <button class="nav admin-only" data-page="alunos">Alunos</button>
+      <button class="nav admin-only" data-page="admin">Admin</button>
+      <button id="logoutBtn" class="logout">Sair</button>
+    </aside>
+
+    <section class="content">
+      <header class="topbar">
+        <div>
+          <h2 id="pageTitle">Novo registro</h2>
+          <p id="userLabel"></p>
+        </div>
+        <button id="menuBtn" class="menu-btn">☰</button>
+      </header>
+
+      <section id="page-novo" class="page active">
+        <div class="card">
+          <h3>Identificação do aluno</h3>
+          <div class="grid three">
+            <div><label>Turma</label><select id="turmaSelect"><option value="">Selecione</option></select></div>
+            <div><label>Aluno</label><select id="alunoSelect"><option value="">Selecione a turma</option></select></div>
+            <div><label>Data do registro</label><input id="dataRegistro" type="date" /></div>
+          </div>
+          <div id="responsaveisBox" class="info-box">Selecione o aluno para visualizar os e-mails dos responsáveis.</div>
+        </div>
+
+        <form id="registroForm" class="card">
+          <h3>Campos do Registro Diário</h3>
+          <div id="formCampos" class="grid two"></div>
+          <div class="actions">
+            <button type="submit">Salvar ocorrência e avisar responsáveis</button>
+            <button type="button" id="limparForm" class="secondary">Limpar</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="page-historico" class="page">
+        <div class="card">
+          <div class="grid four">
+            <div><label>Buscar</label><input id="filtroBusca" placeholder="Aluno, turma ou ocorrência" /></div>
+            <div><label>Turma</label><select id="filtroTurma"><option value="">Todas</option></select></div>
+            <div><label>Data inicial</label><input id="filtroInicio" type="date" /></div>
+            <div><label>Data final</label><input id="filtroFim" type="date" /></div>
+          </div>
+          <div class="actions"><button id="aplicarFiltros">Filtrar</button><button id="exportarCsv" class="secondary">Exportar CSV</button></div>
+        </div>
+        <div id="listaHistorico" class="list"></div>
+      </section>
+
+      <section id="page-alunos" class="page">
+        <div class="card">
+          <h3>Cadastro de alunos e responsáveis</h3>
+          <div class="grid three">
+            <input id="alunoNome" placeholder="Nome do aluno" />
+            <input id="alunoTurma" placeholder="Turma" />
+            <input id="alunoResp1" placeholder="E-mail responsável 1" />
+            <input id="alunoResp2" placeholder="E-mail responsável 2" />
+            <input id="alunoTel" placeholder="Telefone responsável" />
+            <button id="salvarAluno">Salvar aluno</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Importação inicial</h3>
+          <p>Use apenas na primeira configuração do Firebase ou quando quiser atualizar a base.</p>
+          <button id="importarAlunos">Importar alunos da planilha SQL</button>
+          <button id="importarHistorico" class="secondary">Importar histórico do Registro Diário</button>
+        </div>
+        <div id="listaAlunos" class="list compact"></div>
+      </section>
+
+      <section id="page-admin" class="page">
+        <div class="card">
+          <h3>Configurações</h3>
+          <p><strong>Envio de e-mail:</strong> pode ser feito pela Cloud Function inclusa na pasta <code>functions</code> ou pelo EmailJS configurado em <code>firebase-config.js</code>.</p>
+          <div class="grid two">
+            <div><label>E-mail da pedagogia/cópia</label><input id="configCopia" placeholder="pedagogia@escola.com" /></div>
+            <div><label>Nome da unidade</label><input id="configUnidade" placeholder="SESI Dom Bosco" /></div>
+          </div>
+          <button id="salvarConfig">Salvar configurações</button>
+        </div>
+        <div class="card stats"><div><strong id="statAlunos">0</strong><span>Alunos</span></div><div><strong id="statRegistros">0</strong><span>Registros</span></div><div><strong id="statEmails">0</strong><span>E-mails pendentes/enviados</span></div></div>
+      </section>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script type="module" src="assets/app.js"></script>
+</body>
+</html>
