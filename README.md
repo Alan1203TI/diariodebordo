@@ -1,4 +1,16 @@
-# Registro Diário de Alunos - GitHub Pages + Firebase
+# Registro Diário
+## Firebase já configurado
+
+Este ZIP já está com o projeto Firebase `diariodebordo-618c6` configurado em `firebase-config.js`.
+
+No Firebase, ainda confira:
+
+1. Authentication > Sign-in method > ativar **E-mail/senha**.
+2. Firestore Database > criar banco.
+3. Firestore Database > Regras > colar o conteúdo de `firestore.rules`.
+4. Subir os arquivos na raiz do GitHub e usar GitHub Pages em `main /root`.
+
+ de Alunos - GitHub Pages + Firebase
 
 Esta versão foi ajustada para o `index.html` ficar na raiz do repositório, fora da pasta `public`.
 
@@ -69,3 +81,7 @@ Esta versão permite criar o primeiro usuário diretamente na tela inicial do si
 Depois do cadastro, o sistema cria automaticamente:
 - usuário no Firebase Authentication;
 - documento correspondente na coleção `usuarios` do Firestore.
+
+
+## Correção de importação
+Nesta versão o app.js importa apenas firebaseConfig. O EmailJS é opcional via window.emailJsConfig, evitando erro de export não encontrado.

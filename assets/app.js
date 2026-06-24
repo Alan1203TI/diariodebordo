@@ -1,4 +1,5 @@
-import { firebaseConfig, emailJsConfig } from '../firebase-config.js';
+import { firebaseConfig } from '../firebase-config.js';
+const emailJsConfig = window.emailJsConfig || { enabled:false, publicKey:'', serviceId:'', templateId:'' };
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
 import { getFirestore, collection, doc, getDoc, setDoc, addDoc, getDocs, query, where, orderBy, limit, serverTimestamp, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
