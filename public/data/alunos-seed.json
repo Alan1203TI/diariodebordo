@@ -1,0 +1,2063 @@
+[
+  {
+    "id": "1-alfa-alice-marques",
+    "nome": "Alice Marques",
+    "turma": "1ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-alfa-alice-marques-zansavio",
+    "nome": "Alice Marques Zansavio",
+    "turma": "1ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-alfa-alice-marques-sansavio",
+    "nome": "Alice Marques sansavio",
+    "turma": "1ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-alfa-alicia-rita",
+    "nome": "Alicia Rita",
+    "turma": "1ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-alfa-aline-marques",
+    "nome": "Aline Marques",
+    "turma": "1ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-alfa-clara-soares",
+    "nome": "Clara soares",
+    "turma": "1ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-alfa-geovana",
+    "nome": "Geovana",
+    "turma": "1ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-alfa-geovana-andrade",
+    "nome": "Geovana Andrade",
+    "turma": "1ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-alfa-giovana-andrade",
+    "nome": "Giovana Andrade",
+    "turma": "1ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-alfa-giovanna-andrade",
+    "nome": "Giovanna Andrade",
+    "turma": "1ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-alfa-helena-nascimento",
+    "nome": "Helena Nascimento",
+    "turma": "1ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-alfa-isadora-okada",
+    "nome": "Isadora Okada",
+    "turma": "1ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-alfa-j-lia-mend3s",
+    "nome": "Júlia mend3s",
+    "turma": "1ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-alfa-lav-nia-schettno",
+    "nome": "Lavínia Schettno",
+    "turma": "1ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-alfa-maria-beatriz",
+    "nome": "Maria Beatriz",
+    "turma": "1ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-alfa-rafaela-marques",
+    "nome": "Rafaela Marques",
+    "turma": "1ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-alfa-sofia-pietra",
+    "nome": "Sofia Pietra",
+    "turma": "1ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-alfa-vit-ria-dos-passos",
+    "nome": "Vitória dos Passos",
+    "turma": "1ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-caroline",
+    "nome": "Caroline",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-davi-ferreira",
+    "nome": "Davi Ferreira",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-davi-luiz",
+    "nome": "Davi luiz",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-diego",
+    "nome": "Diego",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-diego-neves",
+    "nome": "Diego neves",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-emanuel",
+    "nome": "Emanuel",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-emanuel-nascimento",
+    "nome": "Emanuel Nascimento",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-emanuel-franco",
+    "nome": "Emanuel franco",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-gabriel-dos-santos",
+    "nome": "Gabriel dos Santos",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-gabriela",
+    "nome": "Gabriela",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-henrique-mora",
+    "nome": "Henrique Mora",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-henrique-reis",
+    "nome": "Henrique Reis",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-henrique-de-moura",
+    "nome": "Henrique de Moura",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-henrique-de-moura-reis",
+    "nome": "Henrique de Moura Reis",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-henrique-moura",
+    "nome": "Henrique moura",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-henrique-moura-reis",
+    "nome": "Henrique moura Reis",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-isadora-miyki",
+    "nome": "Isadora Miyki",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-jo-o-pedro-oliveira",
+    "nome": "João Pedro Oliveira",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-jo-o-victor-santos-magalh-es",
+    "nome": "João Victor Santos Magalhães",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-jo-o-vithor-de-oliveira-marques",
+    "nome": "João Vithor de Oliveira Marques",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-j-lia-coelho",
+    "nome": "Júlia Coelho",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-j-lia-maia",
+    "nome": "Júlia Maia",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-lucas-da-costa",
+    "nome": "Lucas da Costa",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-lucas-da-costq",
+    "nome": "Lucas da Costq",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-luiz-miguel-franco",
+    "nome": "Luiz Miguel Franco",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-luiz-otavio",
+    "nome": "Luiz Otavio",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-luiz-ot-vio",
+    "nome": "Luiz Otávio",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-luiz-ot-vio-almeida",
+    "nome": "Luiz Otávio Almeida",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-luiz-ot-vio-de-almeida",
+    "nome": "Luiz Otávio de Almeida",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-lu-s-miguel",
+    "nome": "Luís Miguel",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-lu-s-miguel-franco-trindade",
+    "nome": "Luís Miguel Franco Trindade",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-lu-s-ot-vio-almeida",
+    "nome": "Luís Otávio Almeida",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-marco-aurelio",
+    "nome": "Marco Aurelio",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-marco-aur-lio",
+    "nome": "Marco Aurélio",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-marco-aur-lio-slmeida",
+    "nome": "Marco Aurélio Slmeida",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-marco-aur-lio-de-almeida",
+    "nome": "Marco Aurélio de Almeida",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-marcos-aur-lio-almeida",
+    "nome": "Marcos Aurélio Almeida",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-marcos-aur-lio-de-almeida",
+    "nome": "Marcos Aurélio de Almeida",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-marcos-paulo",
+    "nome": "Marcos Paulo",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-marcus-aur-lio-de-almeida",
+    "nome": "Marcus Aurélio de Almeida",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-marcus-paul9-agostini",
+    "nome": "Marcus Paul9 Agostini",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-marcus-paulo",
+    "nome": "Marcus Paulo",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-marcus-paulo-agostini",
+    "nome": "Marcus Paulo Agostini",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-marcus-paulo-castro",
+    "nome": "Marcus Paulo Castro",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-marcus-paulo-castro-agostini",
+    "nome": "Marcus Paulo Castro Agostini",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-marcus-paulo-castros",
+    "nome": "Marcus Paulo Castros",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-matheus-machado",
+    "nome": "Matheus Machado",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-miguel-luiz-de-abreu",
+    "nome": "Miguel Luiz de Abreu",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-nicholas",
+    "nome": "Nicholas",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-otavio",
+    "nome": "Otavio",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-ot-vio",
+    "nome": "Otávio",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-ot-vio-henrique",
+    "nome": "Otávio Henrique",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-paulo",
+    "nome": "Paulo",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-paulo-henrique",
+    "nome": "Paulo Henrique",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-paulo-henrique-baktar",
+    "nome": "Paulo Henrique Baktar",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-paulo-henrique-baltar",
+    "nome": "Paulo Henrique Baltar",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-paulo-henrique-rios",
+    "nome": "Paulo Henrique Rios",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-samuel-ricardo",
+    "nome": "Samuel Ricardo",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-vinicius",
+    "nome": "Vinicius",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-vinicius-tonon",
+    "nome": "Vinicius Tonon",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "1-mega-vinicius-tonton",
+    "nome": "Vinicius Tonton",
+    "turma": "1ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-alfa-brenda-sandy",
+    "nome": "Brenda Sandy",
+    "turma": "2ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-alfa-brenda-santos",
+    "nome": "Brenda Santos",
+    "turma": "2ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-alfa-brenda-ssndy",
+    "nome": "Brenda Ssndy",
+    "turma": "2ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-alfa-caroline-faccion",
+    "nome": "Caroline Faccion",
+    "turma": "2ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-alfa-caroline-faccion-da-silva",
+    "nome": "Caroline Faccion da Silva",
+    "turma": "2ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-alfa-diego-ferreira",
+    "nome": "Diego Ferreira",
+    "turma": "2ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-alfa-ester-vslquiria",
+    "nome": "Ester Vslquiria",
+    "turma": "2ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-alfa-gabriel-uebe",
+    "nome": "Gabriel uebe",
+    "turma": "2ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-alfa-jo-o-emanuel",
+    "nome": "João Emanuel",
+    "turma": "2ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-alfa-j-lia-maria-carmo",
+    "nome": "Júlia Maria Carmo",
+    "turma": "2ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-alfa-j-lia-maria-do-carmo",
+    "nome": "Júlia Maria do Carmo",
+    "turma": "2ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-alfa-j-lia-savedra",
+    "nome": "Júlia Savedra",
+    "turma": "2ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-alfa-lavinia-donicci",
+    "nome": "Lavinia Donicci",
+    "turma": "2ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-alfa-luan-santos",
+    "nome": "Luan Santos",
+    "turma": "2ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-alfa-luan-santos-da-costa",
+    "nome": "Luan Santos da Costa",
+    "turma": "2ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-alfa-miguel-arthur",
+    "nome": "Miguel Arthur",
+    "turma": "2ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-alfa-miguel-gon-alvez",
+    "nome": "Miguel Gonçalvez",
+    "turma": "2ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-alfa-miguel-toledo",
+    "nome": "Miguel Toledo",
+    "turma": "2ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-alfa-rafael-braga",
+    "nome": "Rafael Braga",
+    "turma": "2ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-alfa-sofia-brum",
+    "nome": "Sofia Brum",
+    "turma": "2ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-alfa-vict-ria-lombello",
+    "nome": "Victória Lombello",
+    "turma": "2ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-0edro-henrique-teixeira",
+    "nome": "0edro Henrique Teixeira",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-anita-luiza",
+    "nome": "Anita Luiza",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-anita-luiza-castro",
+    "nome": "Anita Luiza castro",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-ant-nio",
+    "nome": "Antônio",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-ant-nio-borges",
+    "nome": "Antônio Borges",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-arthur",
+    "nome": "Arthur",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-arthur-cabral",
+    "nome": "Arthur Cabral",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-arthur-oliveira",
+    "nome": "Arthur oliveira",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-augusto-lara",
+    "nome": "Augusto Lara",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-causa-cabral",
+    "nome": "Causa Cabral",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-cau-cabral",
+    "nome": "Cauã Cabral",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-davi-lucas-longatti",
+    "nome": "Davi Lucas Longatti",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-davi-machado",
+    "nome": "Davi Machado",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-davi-sottani",
+    "nome": "Davi Sottani",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-gabriel-louredo",
+    "nome": "Gabriel Louredo",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-gabriel-rozetto",
+    "nome": "Gabriel Rozetto",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-gabriel-rozzeto",
+    "nome": "Gabriel Rozzeto",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-gabriela-gotardo",
+    "nome": "Gabriela Gotardo",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-gabriela-gottardo",
+    "nome": "Gabriela Gottardo",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-guilherme-martins",
+    "nome": "Guilherme Martins",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-guilherme-vianini",
+    "nome": "Guilherme vianini",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-iago",
+    "nome": "Iago",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-iago-almeida",
+    "nome": "Iago Almeida",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-iago-de-almeida",
+    "nome": "Iago de almeida",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-irai",
+    "nome": "Irai",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-jo-o-mateus",
+    "nome": "João Mateus",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-jo-o-mateus-dias",
+    "nome": "João Mateus Dias",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-jo-o-matheus",
+    "nome": "João Matheus",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-kau-lucas",
+    "nome": "Kauê lucas",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-kau-lucs",
+    "nome": "Kauê lucs",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-kau-cabral",
+    "nome": "Kauā Cabral",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-lavinia-lopes",
+    "nome": "Lavinia Lopes",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-leonard-sottani",
+    "nome": "Leonard Sottani",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-leonardo-sottani",
+    "nome": "Leonardo Sottani",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-luan-santos",
+    "nome": "Luan Santos",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-luiz-ot-vio",
+    "nome": "Luiz Otávio",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-marco-aur-lio-de-almeida",
+    "nome": "Marco Aurélio de Almeida",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-maria-ant-nia",
+    "nome": "Maria Antônia",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-maria-ant-nia-nunes",
+    "nome": "Maria Antônia Nunes",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-maria-eduarda",
+    "nome": "Maria Eduarda",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-maria-eduarda-fonseca",
+    "nome": "Maria Eduarda Fonseca",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-maria-vit-ria",
+    "nome": "Maria Vitória",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-mateus-henrique",
+    "nome": "Mateus Henrique",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-mateus-pereira",
+    "nome": "Mateus Pereira",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-matheus-h",
+    "nome": "Matheus H.",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-matheus-pereira",
+    "nome": "Matheus Pereira",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-nariz-eduarda-fonseca",
+    "nome": "Nariz Eduarda Fonseca",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-ot-vio-bari",
+    "nome": "Otávio Bari",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-ot-vio-boari",
+    "nome": "Otávio Boari",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-pedro-augusto",
+    "nome": "Pedro Augusto",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-pedro-augusto-santos",
+    "nome": "Pedro Augusto Santos",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-pedro-henrique",
+    "nome": "Pedro Henrique",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-pedro-henrique-teixeira",
+    "nome": "Pedro Henrique Teixeira",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-pedro-irai",
+    "nome": "Pedro Irai",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-pedro-nepomuceno",
+    "nome": "Pedro Nepomuceno",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-pedro-nepumuceno",
+    "nome": "Pedro Nepumuceno",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-pedro-ira",
+    "nome": "Pedro iraí",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-rafael-braga",
+    "nome": "Rafael Braga",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-vit-ria-gomes",
+    "nome": "Vitória Gomes",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "2-mega-t-vio-boari",
+    "nome": "Ótávio Boari",
+    "turma": "2ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-alice-maria",
+    "nome": "Alice Maria",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-alineclana",
+    "nome": "AlinecLana",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-allyce-paulino",
+    "nome": "Allyce Paulino",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-ana-beatriz",
+    "nome": "Ana Beatriz",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-ana-beatriz-nascimento",
+    "nome": "Ana Beatriz Nascimento",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-camila-fernanda",
+    "nome": "Camila Fernanda",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-camilly-dos-santos-alves",
+    "nome": "Camilly dos Santos Alves",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-davi-kuntze",
+    "nome": "Davi Kuntze",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-gabriel-dos-santos",
+    "nome": "Gabriel dos Santos",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-gabriela-moradio",
+    "nome": "Gabriela Moradio",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-giulia-savedra",
+    "nome": "Giulia Savedra",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-giulia-ruas",
+    "nome": "Giulia ruas",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-henrique-pires",
+    "nome": "Henrique Pires",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-isabela-brilhante",
+    "nome": "Isabela Brilhante",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-isabela-fonseca",
+    "nome": "Isabela fonseca",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-j-lia-santos",
+    "nome": "Júlia Santos",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-kaua-gabriel",
+    "nome": "Kaua Gabriel",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-kaua-guilherme",
+    "nome": "Kaua Guilherme",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-kau-gabriel",
+    "nome": "Kauā Gabriel",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-laura",
+    "nome": "Laura",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-laura-ribeiro",
+    "nome": "Laura Ribeiro",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-lucas-ver-ssimo",
+    "nome": "Lucas Veríssimo",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-manuela-ramos",
+    "nome": "Manuela Ramos",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-maria-alice",
+    "nome": "Maria Alice",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-maria-clara-dellalibra",
+    "nome": "Maria Clara Dellalibra",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-maria-luiza-caputo",
+    "nome": "Maria Luiza Caputo",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-maria-luiza",
+    "nome": "Maria luiza",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-nat-lia-moraes",
+    "nome": "Natália moraes",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-olivia",
+    "nome": "Olivia",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-olivia-jobim",
+    "nome": "Olivia Jobim",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-vinicius-fuzzato",
+    "nome": "Vinicius Fuzzato",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-vitor-hugo-rodrigues",
+    "nome": "Vitor Hugo Rodrigues",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-vitor-rodrigues",
+    "nome": "Vitor Rodrigues",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-alfa-vitor-hugo",
+    "nome": "Vitor hugo",
+    "turma": "3ª ALFA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-ana-beatriz-nascimento",
+    "nome": "Ana Beatriz Nascimento",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-carlos-henrique",
+    "nome": "Carlos Henrique",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-gabriela-benfenati",
+    "nome": "Gabriela benfenati",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-gabrielle",
+    "nome": "Gabrielle",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-gustavo-aleixo",
+    "nome": "Gustavo Aleixo",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-gustavo-bento",
+    "nome": "Gustavo Bento",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-gustavo-henrique",
+    "nome": "Gustavo Henrique",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-gustavo-henrique-bento",
+    "nome": "Gustavo Henrique Bento",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-henrique-pires",
+    "nome": "Henrique pires",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-igor-gustavo",
+    "nome": "Igor Gustavo",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-isaac-emanuel",
+    "nome": "Isaac Emanuel",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-isaac-emanuel-ribeiro",
+    "nome": "Isaac Emanuel Ribeiro",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-isac-emanuel",
+    "nome": "Isac Emanuel",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-israel-emanuel",
+    "nome": "Israel Emanuel",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-jo-o-gabriel",
+    "nome": "João Gabriel",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-julio-cesar-chaves",
+    "nome": "Julio Cesar Chaves",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-julio-chaves",
+    "nome": "Julio Chaves",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-julio-c-sar-davim",
+    "nome": "Julio César Davim",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-j-lio-c-sar-chaves",
+    "nome": "Júlio César Chaves",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-j-lio-davin",
+    "nome": "Júlio Davin",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-kauan",
+    "nome": "Kauan",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-kauan-moura",
+    "nome": "Kauan moura",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-kuan-carmo",
+    "nome": "Kuan Carmo",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-leonardo-gemenes",
+    "nome": "Leonardo Gemenes",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-leonardo-gimenes",
+    "nome": "Leonardo Gimenes",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-leonardo-gimenez",
+    "nome": "Leonardo Gimenez",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-lucas-augusto",
+    "nome": "Lucas Augusto",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-luiz-guilherme",
+    "nome": "Luiz Guilherme",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-luiz-guilherme-moreira",
+    "nome": "Luiz Guilherme Moreira",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-luiza-de-souza",
+    "nome": "Luiza de Souza",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-maria-luiza-de-melo",
+    "nome": "Maria Luiza de Melo",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-maria-vit-ria",
+    "nome": "Maria Vitória",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-maria-vit-ria-rabelo",
+    "nome": "Maria Vitória Rabelo",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-miguel-mazine",
+    "nome": "Miguel Mazine",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  },
+  {
+    "id": "3-mega-miguel-mazzini",
+    "nome": "Miguel Mazzini",
+    "turma": "3ª ÔMEGA",
+    "emailResponsavel1": "",
+    "emailResponsavel2": "",
+    "telefoneResponsavel": "",
+    "ativo": true
+  }
+]
