@@ -493,13 +493,18 @@ async function apagarRegistro(id){
 function abrirModal(){ $('#detailModal').classList.add('open'); }
 function fecharModal(){ $('#detailModal').classList.remove('open'); }
 async function salvarAluno(){ const nome=$('#alunoNome').value.trim(), turma=$('#alunoTurma').value.trim(); if(!nome||!turma){toast('Informe nome e turma.','error');return;} const id=slug(`${turma}-${nome}`); await setDoc(doc(db,colecoes.alunos,id),{nome,turma,emailResponsavel1:$('#alunoResp1').value.trim(),emailResponsavel2:$('#alunoResp2').value.trim(),telefoneResponsavel:$('#alunoTel').value.trim(),ativo:true,updatedAt:serverTimestamp()},{merge:true}); toast('Aluno salvo.'); ['#alunoNome','#alunoTurma','#alunoResp1','#alunoResp2','#alunoTel'].forEach(s=>$(s).value=''); await carregarAlunos(); }
-async function gravarListaImportada(colecao,lista,mapper){
+async function gravarListaImportada(colecao,lista,mapper,opts={}){
   let batch=writeBatch(db), count=0, lote=0;
+  const appendOnly = !!opts.appendOnly;
+  const importacaoId = opts.importacaoId || `imp-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+  const arquivoImportado = opts.arquivoImportado || '';
   for(const item of lista){
     const mapped=mapper(item);
-    const ref=doc(db,colecao,mapped.id||slug(JSON.stringify(mapped).slice(0,80)));
+    const ref=(appendOnly || !mapped.id)
+      ? doc(collection(db,colecao))
+      : doc(db,colecao,mapped.id||slug(JSON.stringify(mapped).slice(0,80)));
     delete mapped.id;
-    batch.set(ref,{...mapped,importadoEm:serverTimestamp()},{merge:true});
+    batch.set(ref,{...mapped,importadoEm:serverTimestamp(), importacaoId, arquivoImportado},{merge:!appendOnly});
     count++; lote++;
     if(lote===400){ await batch.commit(); batch=writeBatch(db); lote=0; toast(`${count} importados...`); }
   }
@@ -527,7 +532,7 @@ async function importarHistoricoArquivo(){
     if(labelRole()!=='admin'){ toast('Apenas administradores podem importar histórico.','error'); return; }
     const rows = await lerPlanilhaArquivo($('#arquivoHistorico'));
     if(!rows.length){ toast('A planilha não possui linhas para importar.','error'); return; }
-    await gravarListaImportada(colecoes.ocorrencias, rows, mapHistoricoImportado);
+    await gravarListaImportada(colecoes.ocorrencias, rows, mapHistoricoImportado,{appendOnly:true,arquivoImportado:$('#arquivoHistorico')?.files?.[0]?.name||''});
     await atualizarHistorico();
   }catch(err){ toast('Erro ao importar histórico: '+(err?.message||err),'error'); }
 }
