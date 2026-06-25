@@ -147,7 +147,7 @@ function mapHistoricoImportado(row={}){
   const data = getField(r,['DATA','DATA DO REGISTRO','DATA REGISTRO','Data']) || today();
   const controle = getField(r,['CONTROLE DIÁRIO','CONTROLE DIARIO','TIPO','TIPO DE REGISTRO','REGISTRO']) || r['CONTROLE DIÁRIO'] || 'Histórico importado';
   const baseId = getField(r,['ID','Nº','NUMERO','NÚMERO']) || `${aluno}-${turma}-${data}-${controle}`;
-  return { ...r, id:`hist-${slug(baseId)}`, ALUNO:aluno, TURMA:turma, DATA:data.includes('/') ? data.split('/').reverse().join('-') : data, ['CONTROLE DIÁRIO']:controle, createdAtLocal:new Date().toISOString(), statusEmail:'historico-importado' };
+  return { ...r, id:`hist-${slug(baseId)}`, ALUNO:aluno, TURMA:turma, DATA:toISODate(data) || data, dataOriginalImportada:data, ['CONTROLE DIÁRIO']:controle, createdAtLocal:new Date().toISOString(), statusEmail:'historico-importado' };
 }
 async function lerPlanilhaArquivo(input){
   const file = input?.files?.[0];
@@ -244,7 +244,24 @@ function toast(msg,type='ok'){ const el=document.createElement('div'); el.classN
 function slug(s=''){return s.toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,90)||crypto.randomUUID();}
 function today(){ return new Date().toISOString().slice(0,10); }
 function escapeHtml(v=''){return String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
-function formatDateBR(v){ if(!v) return ''; const [y,m,d]=String(v).slice(0,10).split('-'); return d&&m&&y?`${d}/${m}/${y}`:v; }
+function toISODate(v){
+  if(!v) return '';
+  if(v instanceof Date && !isNaN(v)) return v.toISOString().slice(0,10);
+  const raw=String(v||'').trim();
+  if(!raw) return '';
+  const iso=raw.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+  if(iso){ const y=iso[1], m=iso[2].padStart(2,'0'), d=iso[3].padStart(2,'0'); return `${y}-${m}-${d}`; }
+  const br=raw.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})/);
+  if(br){ let y=br[3]; if(y.length===2) y='20'+y; const m=br[2].padStart(2,'0'), d=br[1].padStart(2,'0'); return `${y}-${m}-${d}`; }
+  const dt=new Date(raw);
+  if(!isNaN(dt)) return dt.toISOString().slice(0,10);
+  return '';
+}
+function formatDateBR(v){ const iso=toISODate(v); if(!iso) return v||''; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; }
+function todayBR(){ return formatDateBR(today()); }
+function dataRegistroKey(r){
+  return toISODate(r?.DATA) || toISODate(r?.['DATA DO REGISTRO']) || toISODate(r?.['DATA REGISTRO']) || toISODate(r?.['DATA DA OCORRÊNCIA']) || toISODate(r?.['Data']) || toISODate(r?.createdAtLocal) || '';
+}
 function emailsDoAluno(aluno){
   const dados = aluno?.dadosCompletos || {};
   const fromAluno = detectEmailsAluno(aluno||{});
@@ -285,8 +302,8 @@ function isPedagogia(){ return labelRole()==='pedagogia'; }
 function canAccessPage(page){
   const role = labelRole();
   if(role==='admin') return true;
-  if(role==='pedagogia') return ['novo','professor','historico','dashboard','alunos'].includes(page);
-  if(role==='disciplinario') return ['novo','historico'].includes(page);
+  if(role==='pedagogia') return ['dashboard','novo','professor','historico','alunos'].includes(page);
+  if(role==='disciplinario') return ['dashboard','novo','historico'].includes(page);
   if(role==='professor') return ['professor','historico'].includes(page);
   return page==='historico';
 }
@@ -357,7 +374,7 @@ function registroAutorDisplay(r={}){
 }
 function registroEmailInstitucional(){ return 'Registrado pela equipe disciplinar do SESI Dom Bosco.'; }
 
-async function init(){ $('#dataRegistro').value = today(); const pd=$('#profDataRegistro'); if(pd) pd.value=today(); renderCampos(); }
+async function init(){ $('#dataRegistro').value = todayBR(); const pd=$('#profDataRegistro'); if(pd) pd.value=todayBR(); renderCampos(); }
 function renderCampos(){
   const box = $('#formCampos'); box.innerHTML='';
   box.insertAdjacentHTML('beforeend', `<div class="forms-question full"><div class="q-label"><span>4.</span> CONTROLE DIÁRIO <b>*</b></div><select name="CONTROLE DIÁRIO" id="controleDiarioSelect" required><option value="">Selecionar sua resposta</option>${CONTROLE_OPTIONS.map(o=>`<option value="${o}">${o}</option>`).join('')}</select></div><div id="controleSection" class="full"></div>`);
@@ -469,7 +486,7 @@ function textoEmailAutomatico(registro){
 async function salvarRegistro(ev){ if(!['admin','disciplinario'].includes(labelRole())){ ev?.preventDefault?.(); toast('Você não tem permissão para criar registro disciplinar.','error'); return; } ev.preventDefault(); const aluno=alunoSelecionado(); if(!aluno){ toast('Selecione um aluno.','error'); return; }
   const dados={}; new FormData($('#registroForm')).forEach((v,k)=>dados[k]=v);
   const emails=emailsDoAluno(aluno);
-  const registro={...dados,TURMA:aluno.turma,ALUNO:aluno.nome,DATA:$('#dataRegistro').value,Email:state.user.email,disciplinario:state.user.email,registradoPorNome:state.profile?.nome||state.user.email,registradoPorCargo:labelRole(),registradoPorDisplay:usuarioDisplay(),alunoId:aluno.id,alunoDados:aluno.dadosCompletos||aluno,emailsResponsaveis:emails,emailCopia:state.config.emailCopia||'',statusEmail:emails.length?'pendente':'sem-email',createdAt:serverTimestamp(),createdAtLocal:new Date().toISOString()};
+  const registro={...dados,TURMA:aluno.turma,ALUNO:aluno.nome,DATA:toISODate($('#dataRegistro').value)||$('#dataRegistro').value,Email:state.user.email,disciplinario:state.user.email,registradoPorNome:state.profile?.nome||state.user.email,registradoPorCargo:labelRole(),registradoPorDisplay:usuarioDisplay(),alunoId:aluno.id,alunoDados:aluno.dadosCompletos||aluno,emailsResponsaveis:emails,emailCopia:state.config.emailCopia||'',statusEmail:emails.length?'pendente':'sem-email',createdAt:serverTimestamp(),createdAtLocal:new Date().toISOString()};
   registro.textoEmail = textoEmailAutomatico(registro);
   const ref=await addDoc(collection(db,colecoes.ocorrencias),registro);
   await tentarEmailJs(registro,ref.id);
@@ -532,7 +549,7 @@ async function salvarRegistroProfessor(ev){ if(!['admin','professor'].includes(l
     'CONTROLE DIÁRIO':'OCORRÊNCIA PROFESSOR',
     TURMA:aluno.turma,
     ALUNO:aluno.nome,
-    DATA:$('#profDataRegistro').value,
+    DATA:toISODate($('#profDataRegistro').value)||$('#profDataRegistro').value,
     Email:state.user.email,
     disciplinario:state.user.email,
     registradoPorNome:state.profile?.nome||state.user.email,
@@ -562,8 +579,8 @@ function origemRegistro(r){
 function dashboardRegistrosFiltrados(){
   const ini=$('#dashInicio')?.value||'', fim=$('#dashFim')?.value||'', turma=$('#dashTurma')?.value||'', origem=$('#dashOrigem')?.value||'';
   return state.historico.filter(r=>
-    (!ini || String(r.DATA||'')>=ini) &&
-    (!fim || String(r.DATA||'')<=fim) &&
+    (!toISODate(ini) || dataRegistroKey(r)>=toISODate(ini)) &&
+    (!toISODate(fim) || dataRegistroKey(r)<=toISODate(fim)) &&
     (!turma || r.TURMA===turma) &&
     (!origem || origemRegistro(r)===origem)
   );
@@ -577,20 +594,29 @@ function contarPor(lista, getter){
   return [...map.entries()].map(([label,value])=>({label,value})).sort((a,b)=>b.value-a.value);
 }
 function mesRegistro(r){
-  const d=String(r.DATA||r.createdAtLocal||'').slice(0,10);
+  const d=dataRegistroKey(r);
   if(!/^\d{4}-\d{2}/.test(d)) return 'Sem data';
   const [y,m]=d.split('-'); return `${m}/${y}`;
+}
+function corIndicador(label=''){
+  const n=norm(label);
+  if(n.includes('reconhecimento') || n.includes('bom') || n.includes('positivo') || n.includes('destaque')) return '#16a34a';
+  if(n.includes('grave') || n.includes('suspens') || n.includes('advert') || n.includes('desrespeito') || n.includes('comportamento inadequado')) return '#dc2626';
+  if(n.includes('medio') || n.includes('saude') || n.includes('febre') || n.includes('atendimento')) return '#f97316';
+  if(n.includes('atras') || n.includes('uniforme') || n.includes('tarefa') || n.includes('livro') || n.includes('sem fazer')) return '#eab308';
+  if(n.includes('professor') || n.includes('conversa') || n.includes('postura')) return '#2563eb';
+  return '#0ea5e9';
 }
 function chartBars(elId, data, maxItems=10){
   const el=$('#'+elId); if(!el) return;
   const rows=(data||[]).slice(0,maxItems);
   if(!rows.length){ el.innerHTML='<p class="muted">Sem dados para exibir.</p>'; return; }
   const max=Math.max(...rows.map(r=>r.value),1);
-  el.innerHTML=rows.map(r=>`<div class="bar-row"><span class="bar-label" title="${escapeHtml(r.label)}">${escapeHtml(r.label)}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.max(4,(r.value/max)*100)}%"></div></div><strong>${r.value}</strong></div>`).join('');
+  el.innerHTML=rows.map(r=>`<div class="bar-row"><span class="bar-label" title="${escapeHtml(r.label)}">${escapeHtml(r.label)}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.max(4,(r.value/max)*100)}%;background:${corIndicador(r.label)}"></div></div><strong>${r.value}</strong></div>`).join('');
 }
 function chartTimeline(elId, data){
   const el=$('#'+elId); if(!el) return;
-  const rows=[...(data||[])].sort((a,b)=>a.label.localeCompare(b.label,'pt-BR')).slice(-12);
+  const rows=[...(data||[])].sort((a,b)=>{ const ka=a.label==='Sem data'?'0000-00':a.label.split('/').reverse().join('-'); const kb=b.label==='Sem data'?'0000-00':b.label.split('/').reverse().join('-'); return ka.localeCompare(kb); }).slice(-12);
   if(!rows.length){ el.innerHTML='<p class="muted">Sem dados para exibir.</p>'; return; }
   const max=Math.max(...rows.map(r=>r.value),1);
   el.innerHTML=`<div class="mini-line">${rows.map(r=>`<div class="line-col"><div class="line-bar" style="height:${Math.max(8,(r.value/max)*130)}px"></div><small>${escapeHtml(r.label)}</small><strong>${r.value}</strong></div>`).join('')}</div>`;
@@ -630,21 +656,22 @@ function renderDashboard(){
   chartBars('chartAlunos', porAluno, 10);
   chartBars('chartTurmas', porTurma, 10);
   chartBars('chartItensProfessor', contarPor(lista.filter(r=>origemRegistro(r)==='professor'), r=>r['ITEM DE REFERÊNCIA']||r['ITEM DE REFERENCIA']||r.ITEM), 10);
+  chartBars('chartProfessores', contarPor(lista.filter(r=>origemRegistro(r)==='professor'), r=>r.PROFESSOR || r.professor || r.registradoPorNome || r.registradoPorDisplay || r.Email), 10);
   const sancoes = lista.filter(r=>r['SANÇÕES']||r['SANCOES']||r['NATUREZA']);
   chartBars('chartSancoes', contarPor(sancoes, r=>r['SANÇÕES']||r['SANCOES']||r['NATUREZA']), 8);
   const table=$('#dashboardTabelaAlunos');
   if(table){
     const rows=porAluno.slice(0,20).map(a=>{
-      const regs=lista.filter(r=>(r.ALUNO||'')===a.label).sort((x,y)=>String(y.DATA||'').localeCompare(String(x.DATA||'')));
+      const regs=lista.filter(r=>(r.ALUNO||'')===a.label).sort((x,y)=>String(dataRegistroKey(y)).localeCompare(String(dataRegistroKey(x))));
       const ultimo=regs[0]||{};
       const tipo=contarPor(regs,r=>r['CONTROLE DIÁRIO']||r.tipoRegistro||'Registro')[0]?.label||'-';
-      return `<tr><td>${escapeHtml(a.label)}</td><td>${escapeHtml(ultimo.TURMA||'-')}</td><td>${a.value}</td><td>${escapeHtml(tipo)}</td><td>${escapeHtml(formatDateBR(ultimo.DATA)||'-')}</td></tr>`;
+      return `<tr><td>${escapeHtml(a.label)}</td><td>${escapeHtml(ultimo.TURMA||'-')}</td><td>${a.value}</td><td>${escapeHtml(tipo)}</td><td>${escapeHtml(formatDateBR(dataRegistroKey(ultimo))||'-')}</td></tr>`;
     }).join('');
     table.innerHTML=`<table class="dash-table"><thead><tr><th>Aluno</th><th>Turma</th><th>Total</th><th>Tipo mais frequente</th><th>Último registro</th></tr></thead><tbody>${rows||'<tr><td colspan="5">Sem dados.</td></tr>'}</tbody></table>`;
   }
 }
 
-function renderHistorico(){ const busca=$('#filtroBusca').value.toLowerCase(), turma=$('#filtroTurma').value, ini=$('#filtroInicio').value, fim=$('#filtroFim').value; let lista=state.historico.filter(r=>(!turma||r.TURMA===turma)&&(!ini||r.DATA>=ini)&&(!fim||r.DATA<=fim)); if(busca) lista=lista.filter(r=>JSON.stringify(r).toLowerCase().includes(busca)); $('#listaHistorico').innerHTML=lista.map(r=>`<article class="item clickable" data-registro="${r.id}"><h4>${escapeHtml(r.ALUNO||'')}</h4><p><strong>Turma:</strong> ${escapeHtml(r.TURMA||'')} • <strong>Data:</strong> ${escapeHtml(formatDateBR(r.DATA)||'')} • <strong>Registrado por:</strong> ${escapeHtml(registroAutorDisplay(r))}</p><p>${escapeHtml(r['DESCREVA O OCORRIDO']||r['DESCREVA O RECONHECIMENTO']||r['MOTIVO']||r['SINTOMAS']||'Clique para ver todas as informações do registro.')}</p><div class="badges"><span class="badge">${escapeHtml(r['CONTROLE DIÁRIO']||'Registro')}</span>${r.origem==='professor'?'<span class="badge">Registro professor</span>':`<span class="badge">E-mail: ${escapeHtml(r.statusEmail||'não informado')}</span>`}</div></article>`).join('') || '<div class="card">Nenhum registro encontrado.</div>'; $$('[data-registro]').forEach(el=>el.onclick=()=>abrirRegistro(el.dataset.registro)); }
+function renderHistorico(){ const busca=$('#filtroBusca').value.toLowerCase(), turma=$('#filtroTurma').value, ini=$('#filtroInicio').value, fim=$('#filtroFim').value; let lista=state.historico.filter(r=>(!turma||r.TURMA===turma)&&(!toISODate(ini)||dataRegistroKey(r)>=toISODate(ini))&&(!toISODate(fim)||dataRegistroKey(r)<=toISODate(fim)));  if(busca) lista=lista.filter(r=>JSON.stringify(r).toLowerCase().includes(busca)); $('#listaHistorico').innerHTML=lista.map(r=>`<article class="item clickable" data-registro="${r.id}"><h4>${escapeHtml(r.ALUNO||'')}</h4><p><strong>Turma:</strong> ${escapeHtml(r.TURMA||'')} • <strong>Data:</strong> ${escapeHtml(formatDateBR(dataRegistroKey(r))||'')} • <strong>Registrado por:</strong> ${escapeHtml(registroAutorDisplay(r))}</p><p>${escapeHtml(r['DESCREVA O OCORRIDO']||r['DESCREVA O RECONHECIMENTO']||r['MOTIVO']||r['SINTOMAS']||'Clique para ver todas as informações do registro.')}</p><div class="badges"><span class="badge">${escapeHtml(r['CONTROLE DIÁRIO']||'Registro')}</span>${r.origem==='professor'?'<span class="badge">Registro professor</span>':`<span class="badge">E-mail: ${escapeHtml(r.statusEmail||'não informado')}</span>`}</div></article>`).join('') || '<div class="card">Nenhum registro encontrado.</div>'; $$('[data-registro]').forEach(el=>el.onclick=()=>abrirRegistro(el.dataset.registro)); }
 function renderAlunos(){ $('#listaAlunos').innerHTML=state.alunos.slice(0,700).map(a=>`<div class="item clickable" data-aluno="${a.id}"><h4>${escapeHtml(a.nome)}</h4><p>${escapeHtml(a.turma||'')}</p><p>${emailsDoAluno(a).map(escapeHtml).join(', ')||'Sem e-mail cadastrado'}</p><div class="badges"><span class="badge">Ver aba completa</span></div></div>`).join(''); $$('[data-aluno]').forEach(el=>el.onclick=()=>abrirAluno(el.dataset.aluno)); }
 function keyValuesTable(obj){ const rows=Object.entries(obj||{}).filter(([k,v])=>!['id','dadosCompletos'].includes(k)&&v!==undefined&&v!==null&&String(v).trim()!=='' ); return `<div class="detail-grid">${rows.map(([k,v])=>`<div><strong>${escapeHtml(k)}</strong><span>${escapeHtml(v)}</span></div>`).join('')}</div>`; }
 function canon(v=''){ return norm(v).replace(/[^a-z0-9]/g,''); }
@@ -678,8 +705,8 @@ function pertenceAoAluno(registro={}, aluno={}){
   const turmas=alunoTurmaCandidatos(aluno), turmasReg=registroTurmaCandidatos(registro);
   return !turmas.length || !turmasReg.length || turmasReg.some(x=>turmas.includes(x));
 }
-function abrirAluno(id){ const a=state.alunos.find(x=>x.id===id); if(!a) return; state.alunoAberto=a; const regs=state.historico.filter(r=>pertenceAoAluno(r,a)); $('#modalTitle').textContent='Aba do aluno'; $('#modalBody').innerHTML=`<h3>${escapeHtml(a.nome)}</h3><p class="muted">${escapeHtml(a.turma||'')} • ${emailsDoAluno(a).map(escapeHtml).join(', ')||'Sem e-mail cadastrado'}</p><h4>Informações completas da planilha SQL</h4>${keyValuesTable(a.dadosCompletos||a)}<h4>Registros deste aluno</h4>${regs.length?regs.map(r=>`<div class="mini-card" data-modal-registro="${r.id}"><strong>${escapeHtml(formatDateBR(r.DATA)||'')}</strong> — ${escapeHtml(r['CONTROLE DIÁRIO']||'Registro')}<br><span>${escapeHtml(r['DESCREVA O OCORRIDO']||r['DESCREVA O RECONHECIMENTO']||r['MOTIVO']||'Clique para abrir')}</span></div>`).join(''):'<p>Nenhum registro encontrado para este aluno.</p>'}`; abrirModal(); $$('[data-modal-registro]').forEach(el=>el.onclick=()=>abrirRegistro(el.dataset.modalRegistro)); }
-function abrirRegistro(id){ const r=state.historico.find(x=>x.id===id); if(!r) return; $('#modalTitle').textContent='Detalhes do registro'; const aluno=state.alunos.find(a=>a.id===r.alunoId); const podeApagar=labelRole()==='admin'; $('#modalBody').innerHTML=`<h3>${escapeHtml(r.ALUNO||'')}</h3><p class="muted">${escapeHtml(r.TURMA||'')} • ${escapeHtml(formatDateBR(r.DATA)||'')} • Registrado por: ${escapeHtml(registroAutorDisplay(r))}</p><div class="badges"><span class="badge">${escapeHtml(r['CONTROLE DIÁRIO']||'Registro')}</span>${r.origem==='professor'?'<span class="badge">Sem envio de e-mail</span>':`<span class="badge">${escapeHtml(r.statusEmail||'sem status')}</span>`}${r.emailPedagogia?`<span class="badge">Pedagogia: ${escapeHtml(r.emailPedagogia)}</span>`:''}</div>${podeApagar?`<div class="actions"><button type="button" class="danger" id="apagarRegistroBtn" data-id="${escapeHtml(r.id)}">Apagar registro</button></div>`:''}<h4>Informações do registro</h4>${keyValuesTable(r)}<h4>Texto automático do e-mail</h4><pre class="email-preview">${escapeHtml(r.textoEmail||textoEmailAutomatico(r))}</pre>${aluno?`<h4>Dados do aluno na planilha SQL</h4>${keyValuesTable(aluno.dadosCompletos||aluno)}`:''}`; abrirModal(); const btn=$('#apagarRegistroBtn'); if(btn) btn.onclick=()=>apagarRegistro(btn.dataset.id); }
+function abrirAluno(id){ const a=state.alunos.find(x=>x.id===id); if(!a) return; state.alunoAberto=a; const regs=state.historico.filter(r=>pertenceAoAluno(r,a)); $('#modalTitle').textContent='Aba do aluno'; $('#modalBody').innerHTML=`<h3>${escapeHtml(a.nome)}</h3><p class="muted">${escapeHtml(a.turma||'')} • ${emailsDoAluno(a).map(escapeHtml).join(', ')||'Sem e-mail cadastrado'}</p><h4>Informações completas da planilha SQL</h4>${keyValuesTable(a.dadosCompletos||a)}<h4>Registros deste aluno</h4>${regs.length?regs.map(r=>`<div class="mini-card" data-modal-registro="${r.id}"><strong>${escapeHtml(formatDateBR(dataRegistroKey(r))||'')}</strong> — ${escapeHtml(r['CONTROLE DIÁRIO']||'Registro')}<br><span>${escapeHtml(r['DESCREVA O OCORRIDO']||r['DESCREVA O RECONHECIMENTO']||r['MOTIVO']||'Clique para abrir')}</span></div>`).join(''):'<p>Nenhum registro encontrado para este aluno.</p>'}`; abrirModal(); $$('[data-modal-registro]').forEach(el=>el.onclick=()=>abrirRegistro(el.dataset.modalRegistro)); }
+function abrirRegistro(id){ const r=state.historico.find(x=>x.id===id); if(!r) return; $('#modalTitle').textContent='Detalhes do registro'; const aluno=state.alunos.find(a=>a.id===r.alunoId); const podeApagar=labelRole()==='admin'; $('#modalBody').innerHTML=`<h3>${escapeHtml(r.ALUNO||'')}</h3><p class="muted">${escapeHtml(r.TURMA||'')} • ${escapeHtml(formatDateBR(dataRegistroKey(r))||'')} • Registrado por: ${escapeHtml(registroAutorDisplay(r))}</p><div class="badges"><span class="badge">${escapeHtml(r['CONTROLE DIÁRIO']||'Registro')}</span>${r.origem==='professor'?'<span class="badge">Sem envio de e-mail</span>':`<span class="badge">${escapeHtml(r.statusEmail||'sem status')}</span>`}${r.emailPedagogia?`<span class="badge">Pedagogia: ${escapeHtml(r.emailPedagogia)}</span>`:''}</div>${podeApagar?`<div class="actions"><button type="button" class="danger" id="apagarRegistroBtn" data-id="${escapeHtml(r.id)}">Apagar registro</button></div>`:''}<h4>Informações do registro</h4>${keyValuesTable(r)}<h4>Texto automático do e-mail</h4><pre class="email-preview">${escapeHtml(r.textoEmail||textoEmailAutomatico(r))}</pre>${aluno?`<h4>Dados do aluno na planilha SQL</h4>${keyValuesTable(aluno.dadosCompletos||aluno)}`:''}`; abrirModal(); const btn=$('#apagarRegistroBtn'); if(btn) btn.onclick=()=>apagarRegistro(btn.dataset.id); }
 async function apagarRegistro(id){
   if(labelRole()!=='admin'){ toast('Apenas administradores podem apagar registros.','error'); return; }
   if(!confirm('Deseja realmente apagar este registro?')) return;
@@ -744,6 +771,26 @@ async function limparBancoDados(){
   state.alunos=[]; state.historico=[]; renderAlunos(); renderHistorico();
 }
 function exportarCsv(){ const rows=state.historico; if(!rows.length){toast('Nada para exportar.','error');return;} const cols=[...new Set(rows.flatMap(r=>Object.keys(r)))]; const csv=[cols.join(';'),...rows.map(r=>cols.map(c=>`"${String(r[c]??'').replace(/"/g,'""')}"`).join(';'))].join('\n'); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download='registro-diario-ocorrencias.csv'; a.click(); }
+
+
+function aplicarMascaraDataBR(input){
+  if(!input) return;
+  input.addEventListener('input',()=>{
+    let v=input.value.replace(/\D/g,'').slice(0,8);
+    if(v.length>=5) v=v.replace(/(\d{2})(\d{2})(\d{1,4})/,'$1/$2/$3');
+    else if(v.length>=3) v=v.replace(/(\d{2})(\d{1,2})/,'$1/$2');
+    input.value=v;
+  });
+}
+function aplicarMascarasData(){ ['#dataRegistro','#profDataRegistro','#dashInicio','#dashFim','#filtroInicio','#filtroFim','input[name="DATA DA OCORRÊNCIA"]'].forEach(sel=>document.querySelectorAll(sel).forEach(aplicarMascaraDataBR)); }
+
+function paginaInicialPorPerfil(){
+  if(canAccessPage('dashboard')) return 'dashboard';
+  if(canAccessPage('professor')) return 'professor';
+  if(canAccessPage('novo')) return 'novo';
+  return 'historico';
+}
+
 function trocarPagina(p){
   if(!canAccessPage(p)){ toast('Você não tem permissão para acessar esta área.','error'); p = canAccessPage('historico') ? 'historico' : (canAccessPage('novo')?'novo':'professor'); }
   $$('.nav').forEach(b=>b.classList.toggle('active',b.dataset.page===p));
@@ -804,8 +851,9 @@ async function criarUsuarioAdmin(ev){
   }
 }
 
+aplicarMascarasData();
 $('#loginForm').addEventListener('submit',async e=>{ e.preventDefault(); try{ await signInWithEmailAndPassword(auth,$('#loginEmail').value,$('#loginPassword').value); }catch(err){toast('Erro no login: '+err.message,'error')} });
 if($('#changePasswordForm')) $('#changePasswordForm').addEventListener('submit',trocarSenhaInicial);
 $('#logoutBtn').onclick=()=>signOut(auth); $('#menuBtn').onclick=()=>$('.sidebar').classList.toggle('open'); $$('.nav').forEach(b=>b.onclick=()=>trocarPagina(b.dataset.page));
 $('#turmaSelect').onchange=preencherAlunos; $('#alunoSelect').onchange=atualizarResponsaveis; if($('#profTurmaSelect')) $('#profTurmaSelect').onchange=preencherAlunosProfessor; if($('#profAlunoSelect')) $('#profAlunoSelect').onchange=atualizarAlunoProfessor; $('#registroForm').onsubmit=salvarRegistro; if($('#professorForm')) $('#professorForm').onsubmit=salvarRegistroProfessor; $('#limparForm').onclick=()=>{ $('#registroForm').reset(); renderControleSection(); }; if($('#limparProfessorForm')) $('#limparProfessorForm').onclick=()=>{ $('#professorForm').reset(); const pn=$('#professorNome'); if(pn) pn.value=state.profile.nome || state.user.email; }; $('#aplicarFiltros').onclick=renderHistorico; $('#exportarCsv').onclick=exportarCsv; if($('#atualizarDashboard')) $('#atualizarDashboard').onclick=renderDashboard; if($('#limparDashboard')) $('#limparDashboard').onclick=()=>{ ['#dashInicio','#dashFim','#dashOrigem'].forEach(s=>{ if($(s)) $(s).value=''; }); if($('#dashTurma')) $('#dashTurma').value=''; renderDashboard(); }; $('#salvarAluno').onclick=salvarAluno; $('#importarAlunos').onclick=importarAlunos; $('#importarHistorico').onclick=importarHistorico; $('#importarAlunosArquivo').onclick=importarAlunosArquivo; $('#importarHistoricoArquivo').onclick=importarHistoricoArquivo; $('#adminUserForm').addEventListener('submit',criarUsuarioAdmin); $('#salvarConfig').onclick=salvarConfig; $('#limparBanco').onclick=limparBancoDados; $('#modalClose').onclick=fecharModal; $('#modalBackdrop').onclick=fecharModal;
-onAuthStateChanged(auth,async user=>{ state.user=user; $('#loginScreen').classList.toggle('hidden',!!user); $('#app').classList.toggle('hidden',!user); if(user){ await init(); await carregarPerfil(); applyRolePermissions(); await carregarConfig(); await carregarAlunos(); await atualizarHistorico(); trocarPagina(canAccessPage('novo')?'novo':(canAccessPage('professor')?'professor':'historico')); } });
+onAuthStateChanged(auth,async user=>{ state.user=user; $('#loginScreen').classList.toggle('hidden',!!user); $('#app').classList.toggle('hidden',!user); if(user){ await init(); await carregarPerfil(); applyRolePermissions(); await carregarConfig(); await carregarAlunos(); await atualizarHistorico(); trocarPagina(paginaInicialPorPerfil()); } });

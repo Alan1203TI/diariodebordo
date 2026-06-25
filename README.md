@@ -27,3 +27,11 @@ Atualização desta versão:
 A base inicial inclusa em `data/alunos-seed.json` foi atualizada com a planilha `SQL DADOS PARA FORMS ALAN.XLSX` contendo 865 alunos e as colunas: RA ALUNO, ALUNO NOME, CODIGO TURMA, E-MAIL, NOME DO PAI, E-MAIL DO PAI, NOME MÃE, E-MAIL MÃE, NOME RESPONSAVEL ACADEMICO e E-MAIL RESPONSAVEL ACADEMICO.
 
 Na importação de nova planilha SQL, o sistema reconhece automaticamente E-MAIL, E-MAIL DO PAI, E-MAIL MÃE e E-MAIL RESPONSAVEL ACADEMICO. Para envio aos responsáveis são usados mãe, pai e responsável acadêmico quando existirem. O campo E-MAIL do aluno é preservado na ficha completa, mas não é usado como destinatário principal dos responsáveis.
+
+## Atualização dashboard
+- Dashboard passa a ser a primeira tela para perfis com acesso.
+- Menu reorganizado com Dashboard em primeiro.
+- Disciplinário e Pedagogia podem visualizar o Dashboard.
+- Datas aceitam padrão brasileiro dd/mm/aaaa e os filtros consideram registros importados do Excel.
+- Novo gráfico: professores com mais registros de ocorrência de aluno.
+- Gráficos com cores indicativas por tipo/gravidade.

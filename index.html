@@ -27,10 +27,10 @@
   <main id="app" class="app hidden">
     <aside class="sidebar">
       <div class="logo"><img src="assets/logosesi.png" alt="SESI"><span>Registro<br><strong>Diário</strong></span></div>
-      <button class="nav active" data-page="novo">Novo registro</button>
+      <button class="nav active dash-only" data-page="dashboard">Dashboard</button>
+      <button class="nav" data-page="novo">Novo registro</button>
       <button class="nav teacher-only" data-page="professor">Registro professor</button>
       <button class="nav" data-page="historico">Histórico</button>
-      <button class="nav dash-only" data-page="dashboard">Dashboard</button>
       <button class="nav admin-only" data-page="alunos">Alunos</button>
       <button class="nav admin-only" data-page="admin">Admin</button>
       <button id="logoutBtn" class="logout">Sair</button>
@@ -39,13 +39,13 @@
     <section class="content">
       <header class="topbar">
         <div>
-          <h2 id="pageTitle">Novo registro</h2>
+          <h2 id="pageTitle">Dashboard</h2>
           <p id="userLabel"></p>
         </div>
         <button id="menuBtn" class="menu-btn">☰</button>
       </header>
 
-      <section id="page-novo" class="page active">
+      <section id="page-novo" class="page">
         <div class="hero-card">
           <div class="hero-overlay">
             <img src="assets/logosesi.png" alt="SESI" class="hero-logo">
@@ -57,7 +57,7 @@
           <div class="grid three">
             <div><label>Turma</label><select id="turmaSelect"><option value="">Selecione</option></select></div>
             <div><label>Aluno</label><select id="alunoSelect"><option value="">Selecione a turma</option></select></div>
-            <div><label>Data do registro</label><input id="dataRegistro" type="date" /></div>
+            <div><label>Data do registro</label><input id="dataRegistro" type="text" placeholder="dd/mm/aaaa" inputmode="numeric" /></div>
           </div>
           <div id="responsaveisBox" class="info-box">Selecione o aluno para visualizar os e-mails dos responsáveis.</div>
         </div>
@@ -85,7 +85,7 @@
           <div class="grid three">
             <div><label>Turma</label><select id="profTurmaSelect"><option value="">Selecione</option></select></div>
             <div><label>Aluno</label><select id="profAlunoSelect"><option value="">Selecione a turma</option></select></div>
-            <div><label>Data do registro</label><input id="profDataRegistro" type="date" /></div>
+            <div><label>Data do registro</label><input id="profDataRegistro" type="text" placeholder="dd/mm/aaaa" inputmode="numeric" /></div>
           </div>
           <div id="profAlunoBox" class="info-box">Selecione o aluno para visualizar os dados completos.</div>
         </div>
@@ -97,7 +97,7 @@
             <div><label>Professor</label><input id="professorNome" name="PROFESSOR" placeholder="Nome do professor" /></div>
             <div><label>Disciplina</label><select name="DISCIPLINA" required><option value="">Selecionar</option><option>MATEMÁTICA</option><option>PORTUGUÊS</option><option>HISTÓRIA</option><option>GEOGRAFIA</option><option>CIÊNCIAS</option><option>PRODUÇÃO DE TEXTO</option><option>LITERATURA</option><option>ARTE</option><option>INGLÊS</option><option>EDUCAÇÃO FÍSICA</option><option>Outra</option></select></div>
             <div><label>Horário / aula</label><select name="HORÁRIO/AULA" required><option value="">Selecionar</option><option>1º horário</option><option>2º horário</option><option>3º horário</option><option>4º horário</option><option>5º horário</option><option>6º horário</option><option>Outra</option></select></div>
-            <div><label>Data da ocorrência</label><input name="DATA DA OCORRÊNCIA" type="date" /></div>
+            <div><label>Data da ocorrência</label><input name="DATA DA OCORRÊNCIA" type="text" placeholder="dd/mm/aaaa" inputmode="numeric" /></div>
             <div class="full"><label>Item de referência da ocorrência</label><select name="ITEM DE REFERÊNCIA" required>
               <option value="">Selecionar</option>
               <option>1 - CONVERSA PARALELA</option>
@@ -121,7 +121,7 @@
       </section>
 
 
-      <section id="page-dashboard" class="page">
+      <section id="page-dashboard" class="page active">
         <div class="hero-card dashboard-hero">
           <div class="hero-overlay">
             <img src="assets/logosesi.png" alt="SESI" class="hero-logo">
@@ -131,8 +131,8 @@
 
         <div class="card">
           <div class="grid four">
-            <div><label>Período inicial</label><input id="dashInicio" type="date" /></div>
-            <div><label>Período final</label><input id="dashFim" type="date" /></div>
+            <div><label>Período inicial</label><input id="dashInicio" type="text" placeholder="dd/mm/aaaa" inputmode="numeric" /></div>
+            <div><label>Período final</label><input id="dashFim" type="text" placeholder="dd/mm/aaaa" inputmode="numeric" /></div>
             <div><label>Turma</label><select id="dashTurma"><option value="">Todas</option></select></div>
             <div><label>Origem</label><select id="dashOrigem"><option value="">Todas</option><option value="disciplinar">Registro diário</option><option value="professor">Professor</option></select></div>
           </div>
@@ -147,6 +147,7 @@
           <div class="card"><h3>Top 10 alunos com mais ocorrências</h3><div id="chartAlunos" class="chart-box"></div></div>
           <div class="card"><h3>Turmas com mais ocorrências</h3><div id="chartTurmas" class="chart-box"></div></div>
           <div class="card"><h3>Itens mais recorrentes do professor</h3><div id="chartItensProfessor" class="chart-box"></div></div>
+          <div class="card"><h3>Professores com mais registros</h3><div id="chartProfessores" class="chart-box"></div></div>
           <div class="card"><h3>Sanções e natureza</h3><div id="chartSancoes" class="chart-box"></div></div>
         </div>
 
@@ -161,8 +162,8 @@
           <div class="grid four">
             <div><label>Buscar</label><input id="filtroBusca" placeholder="Aluno, turma ou ocorrência" /></div>
             <div><label>Turma</label><select id="filtroTurma"><option value="">Todas</option></select></div>
-            <div><label>Data inicial</label><input id="filtroInicio" type="date" /></div>
-            <div><label>Data final</label><input id="filtroFim" type="date" /></div>
+            <div><label>Data inicial</label><input id="filtroInicio" type="text" placeholder="dd/mm/aaaa" inputmode="numeric" /></div>
+            <div><label>Data final</label><input id="filtroFim" type="text" placeholder="dd/mm/aaaa" inputmode="numeric" /></div>
           </div>
           <div class="actions"><button id="aplicarFiltros">Filtrar</button><button id="exportarCsv" class="secondary">Exportar CSV</button></div>
         </div>
