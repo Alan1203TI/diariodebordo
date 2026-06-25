@@ -121,3 +121,20 @@ O sistema envia a variável `{{logo_url}}` automaticamente com o caminho públic
 - Adicionada opção de apagar registro nos detalhes do histórico para usuários admin.
 - Envio para pedagogia: configure o e-mail em Admin > E-mail da pedagogia/cópia e, no EmailJS, coloque o campo Cc como `{{cc_email}}`.
 - O template HTML atualizado está em `emailjs-template-registro-diario.html`.
+
+
+## Atualização desta versão
+
+- A criação de usuários saiu da tela de login e agora fica em **Admin > Criar usuários do sistema**.
+- Administradores podem criar usuários informando nome, e-mail, senha e perfil.
+- O painel Admin agora possui uma área para importar uma nova planilha SQL de alunos em formato `.xlsx`, `.xls` ou `.csv`. Todas as colunas da planilha são preservadas na aba do aluno.
+- O painel Admin também possui uma área para importar histórico do Registro Diário em formato `.xlsx`, `.xls` ou `.csv`.
+- Para permitir que administradores criem documentos de usuários no Firestore, publique novamente o arquivo `firestore.rules` incluído nesta versão.
+
+### Importação de alunos
+
+A planilha de alunos pode conter várias colunas. O sistema tenta reconhecer automaticamente nome, turma, RA e e-mail da mãe. O campo usado prioritariamente para envio é o e-mail da mãe, reconhecendo variações como `E-MAIL MÃE`, `EMAIL MAE`, `EMAIL_MAE` e semelhantes.
+
+### Criação de usuários
+
+Antes de criar usuários pelo painel, confirme que o usuário logado possui `role: admin` na coleção `usuarios`.

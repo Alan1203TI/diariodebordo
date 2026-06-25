@@ -1,6 +1,6 @@
 import { firebaseConfig } from '../firebase-config.js';
 const emailJsConfig = window.emailJsConfig || { enabled:false, publicKey:'', serviceId:'', templateId:'' };
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
+import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
 import { getFirestore, collection, doc, getDoc, setDoc, addDoc, getDocs, deleteDoc, query, where, orderBy, limit, serverTimestamp, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
 
@@ -19,6 +19,55 @@ function detectMaeEmail(obj){
   if(preferred) return String(preferred[1]).trim();
   const anyEmail = entries.find(([k,v])=> norm(k).includes('email') && v);
   return anyEmail ? String(anyEmail[1]).trim() : '';
+}
+function getField(obj, nomes=[]){
+  const entries = Object.entries(obj||{});
+  for(const nome of nomes){
+    const hit = entries.find(([k,v])=> norm(k)===norm(nome) && v!==undefined && v!==null && String(v).trim()!=='');
+    if(hit) return String(hit[1]).trim();
+  }
+  for(const nome of nomes){
+    const n = norm(nome);
+    const hit = entries.find(([k,v])=> norm(k).includes(n) && v!==undefined && v!==null && String(v).trim()!=='');
+    if(hit) return String(hit[1]).trim();
+  }
+  return '';
+}
+function normalizarLinhaPlanilha(row={}){
+  const out={};
+  Object.entries(row||{}).forEach(([k,v])=>{
+    if(k===undefined || k===null || String(k).trim()==='') return;
+    if(v instanceof Date) out[String(k).trim()] = v.toLocaleDateString('pt-BR');
+    else out[String(k).trim()] = v ?? '';
+  });
+  return out;
+}
+function mapAlunoImportado(row={}){
+  const a = normalizarLinhaPlanilha(row);
+  const nome = getField(a,['ALUNO NOME','NOME ALUNO','NOME DO ALUNO','ALUNO','NOME','Nome do aluno']) || a.nome || '';
+  const turma = getField(a,['CODIGO TURMA','CÓDIGO TURMA','TURMA','COD TURMA','Código Turma']) || a.turma || '';
+  const ra = getField(a,['RA ALUNO','RA','MATRICULA','MATRÍCULA','ID ALUNO']);
+  const maeEmail = detectMaeEmail(a);
+  const id = slug(`${turma}-${ra || nome}`);
+  return { ...a, id, nome, turma, raAluno: ra, emailMae: maeEmail, emailResponsavel1: maeEmail, dadosCompletos: a, ativo:true };
+}
+function mapHistoricoImportado(row={}){
+  const r = normalizarLinhaPlanilha(row);
+  const aluno = getField(r,['ALUNO','ALUNO NOME','NOME ALUNO','NOME DO ALUNO','Nome do aluno']) || r.ALUNO || '';
+  const turma = getField(r,['TURMA','CODIGO TURMA','CÓDIGO TURMA','COD TURMA']) || r.TURMA || '';
+  const data = getField(r,['DATA','DATA DO REGISTRO','DATA REGISTRO','Data']) || today();
+  const controle = getField(r,['CONTROLE DIÁRIO','CONTROLE DIARIO','TIPO','TIPO DE REGISTRO','REGISTRO']) || r['CONTROLE DIÁRIO'] || 'Histórico importado';
+  const baseId = getField(r,['ID','Nº','NUMERO','NÚMERO']) || `${aluno}-${turma}-${data}-${controle}`;
+  return { ...r, id:`hist-${slug(baseId)}`, ALUNO:aluno, TURMA:turma, DATA:data.includes('/') ? data.split('/').reverse().join('-') : data, ['CONTROLE DIÁRIO']:controle, createdAtLocal:new Date().toISOString(), statusEmail:'historico-importado' };
+}
+async function lerPlanilhaArquivo(input){
+  const file = input?.files?.[0];
+  if(!file) throw new Error('Selecione um arquivo .xlsx, .xls ou .csv.');
+  if(!window.XLSX) throw new Error('Biblioteca de planilha não carregada. Atualize a página e tente novamente.');
+  const buffer = await file.arrayBuffer();
+  const wb = XLSX.read(buffer,{type:'array',cellDates:true});
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  return XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});
 }
 
 const TURMAS_FORMS = ['1º ALFA','1º ÔMEGA','2º ALFA','2º ÔMEGA','3º ALFA','3º ÔMEGA'];
@@ -107,7 +156,13 @@ function slug(s=''){return s.toString().normalize('NFD').replace(/[\u0300-\u036f
 function today(){ return new Date().toISOString().slice(0,10); }
 function escapeHtml(v=''){return String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function formatDateBR(v){ if(!v) return ''; const [y,m,d]=String(v).slice(0,10).split('-'); return d&&m&&y?`${d}/${m}/${y}`:v; }
-function emailsDoAluno(aluno){ return [aluno?.emailResponsavel1, aluno?.emailResponsavel2, aluno?.emailResponsavel3, aluno?.['E-MAIL MÃE'], aluno?.dadosCompletos?.['E-MAIL MÃE']].filter(Boolean).map(e=>String(e).trim()).filter(e=>e.includes('@')); }
+function emailsDoAluno(aluno){
+  const dados = aluno?.dadosCompletos || {};
+  const mae = detectMaeEmail(aluno) || detectMaeEmail(dados);
+  return [mae, aluno?.emailMae, aluno?.emailResponsavel1, aluno?.emailResponsavel2, aluno?.emailResponsavel3]
+    .filter(Boolean).map(e=>String(e).trim()).filter(e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))
+    .filter((e,i,arr)=>arr.indexOf(e)===i);
+}
 function alunoSelecionado(){ return state.alunos.find(a=>a.id===$('#alunoSelect').value); }
 function labelRole(){ return state.profile.role || state.profile.perfil || 'disciplinario'; }
 function usuarioDisplay(){
@@ -276,15 +331,44 @@ async function apagarRegistro(id){
 function abrirModal(){ $('#detailModal').classList.add('open'); }
 function fecharModal(){ $('#detailModal').classList.remove('open'); }
 async function salvarAluno(){ const nome=$('#alunoNome').value.trim(), turma=$('#alunoTurma').value.trim(); if(!nome||!turma){toast('Informe nome e turma.','error');return;} const id=slug(`${turma}-${nome}`); await setDoc(doc(db,colecoes.alunos,id),{nome,turma,emailResponsavel1:$('#alunoResp1').value.trim(),emailResponsavel2:$('#alunoResp2').value.trim(),telefoneResponsavel:$('#alunoTel').value.trim(),ativo:true,updatedAt:serverTimestamp()},{merge:true}); toast('Aluno salvo.'); ['#alunoNome','#alunoTurma','#alunoResp1','#alunoResp2','#alunoTel'].forEach(s=>$(s).value=''); await carregarAlunos(); }
-async function importarJson(path,colecao,mapper){ const data=await fetch(path).then(r=>r.json()); let batch=writeBatch(db), count=0, lote=0; for(const item of data){ const mapped=mapper(item); const ref=doc(db,colecao,mapped.id||slug(JSON.stringify(mapped).slice(0,80))); delete mapped.id; batch.set(ref,{...mapped,importadoEm:serverTimestamp()},{merge:true}); count++; lote++; if(lote===450){ await batch.commit(); batch=writeBatch(db); lote=0; toast(`${count} importados...`); } } if(lote) await batch.commit(); toast(`${count} registros importados.`); return count; }
+async function gravarListaImportada(colecao,lista,mapper){
+  let batch=writeBatch(db), count=0, lote=0;
+  for(const item of lista){
+    const mapped=mapper(item);
+    const ref=doc(db,colecao,mapped.id||slug(JSON.stringify(mapped).slice(0,80)));
+    delete mapped.id;
+    batch.set(ref,{...mapped,importadoEm:serverTimestamp()},{merge:true});
+    count++; lote++;
+    if(lote===400){ await batch.commit(); batch=writeBatch(db); lote=0; toast(`${count} importados...`); }
+  }
+  if(lote) await batch.commit();
+  toast(`${count} registros importados.`);
+  return count;
+}
+async function importarJson(path,colecao,mapper){ const data=await fetch(path).then(r=>r.json()); return gravarListaImportada(colecao,data,mapper); }
 async function importarAlunos(){
-  await importarJson('data/alunos-seed.json',colecoes.alunos,a=>{
-    const maeEmail = detectMaeEmail(a);
-    return {...a, nome:a.nome||a.NOME||a['Nome do aluno']||'', turma:a.turma||a.TURMA||'', emailMae:maeEmail, emailResponsavel1:maeEmail||a.emailResponsavel1||''};
-  });
+  await importarJson('data/alunos-seed.json',colecoes.alunos,mapAlunoImportado);
   await carregarAlunos();
 }
-async function importarHistorico(){ await importarJson('data/registros-historicos-seed.json',colecoes.ocorrencias,r=>({...r,id:`hist-${r.ID||crypto.randomUUID()}`,createdAtLocal:r['Hora de início']||new Date().toISOString(),statusEmail:'historico'})); await atualizarHistorico(); }
+async function importarHistorico(){ await importarJson('data/registros-historicos-seed.json',colecoes.ocorrencias,mapHistoricoImportado); await atualizarHistorico(); }
+async function importarAlunosArquivo(){
+  try{
+    if(labelRole()!=='admin'){ toast('Apenas administradores podem importar alunos.','error'); return; }
+    const rows = await lerPlanilhaArquivo($('#arquivoAlunosSql'));
+    if(!rows.length){ toast('A planilha não possui linhas para importar.','error'); return; }
+    await gravarListaImportada(colecoes.alunos, rows, mapAlunoImportado);
+    await carregarAlunos();
+  }catch(err){ toast('Erro ao importar alunos: '+(err?.message||err),'error'); }
+}
+async function importarHistoricoArquivo(){
+  try{
+    if(labelRole()!=='admin'){ toast('Apenas administradores podem importar histórico.','error'); return; }
+    const rows = await lerPlanilhaArquivo($('#arquivoHistorico'));
+    if(!rows.length){ toast('A planilha não possui linhas para importar.','error'); return; }
+    await gravarListaImportada(colecoes.ocorrencias, rows, mapHistoricoImportado);
+    await atualizarHistorico();
+  }catch(err){ toast('Erro ao importar histórico: '+(err?.message||err),'error'); }
+}
 async function limparBancoDados(){
   if(!confirm('Deseja realmente apagar TODOS os dados do banco? Esta ação remove alunos, registros e usuários extras.')) return;
   const colunas=[colecoes.ocorrencias, colecoes.alunos];
@@ -297,14 +381,39 @@ async function limparBancoDados(){
   state.alunos=[]; state.historico=[]; renderAlunos(); renderHistorico();
 }
 function exportarCsv(){ const rows=state.historico; if(!rows.length){toast('Nada para exportar.','error');return;} const cols=[...new Set(rows.flatMap(r=>Object.keys(r)))]; const csv=[cols.join(';'),...rows.map(r=>cols.map(c=>`"${String(r[c]??'').replace(/"/g,'""')}"`).join(';'))].join('\n'); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download='registro-diario-ocorrencias.csv'; a.click(); }
-function trocarPagina(p){ $$('.nav').forEach(b=>b.classList.toggle('active',b.dataset.page===p)); $$('.page').forEach(s=>s.classList.toggle('active',s.id===`page-${p}`)); $('#pageTitle').textContent={novo:'Novo registro',historico:'Histórico',alunos:'Alunos',admin:'Admin'}[p]||'Registro'; $('.sidebar').classList.remove('open'); if(p==='historico') atualizarHistorico(); if(p==='alunos') renderAlunos(); }
-async function existeUsuarioAdmin(){ const snap = await getDocs(query(collection(db,colecoes.usuarios), where('role','==','admin'), limit(1))); return !snap.empty; }
-async function criarContaInicial(ev){ ev.preventDefault(); const nome=$('#setupNome').value.trim(); const email=$('#setupEmail').value.trim(); const senha=$('#setupPassword').value; const perfil=$('#setupPerfil').value; if(!nome || !email || senha.length<6){ toast('Informe nome, e-mail e senha com pelo menos 6 caracteres.','error'); return; } try{ const cred = await createUserWithEmailAndPassword(auth,email,senha); const adminExiste = await existeUsuarioAdmin(); const role = adminExiste ? perfil : 'admin'; await setDoc(doc(db,colecoes.usuarios,cred.user.uid),{nome,email,role,ativo:true,createdAt:serverTimestamp()},{merge:true}); toast(adminExiste ? 'Usuário criado com sucesso.' : 'Primeiro administrador criado com sucesso.'); }catch(err){ toast('Erro ao criar usuário: '+(err?.message||err),'error'); } }
-function mostrarAbaLogin(aba){ $('#loginForm').classList.toggle('hidden',aba!=='login'); $('#setupForm').classList.toggle('hidden',aba!=='setup'); $('#tabLogin').classList.toggle('active',aba==='login'); $('#tabSetup').classList.toggle('active',aba==='setup'); $('#loginHelp').textContent = aba==='login' ? 'Entre com o e-mail e senha cadastrados no programa.' : 'No primeiro cadastro, o sistema cria automaticamente o usuário administrador.'; }
+function trocarPagina(p){ $$('.nav').forEach(b=>b.classList.toggle('active',b.dataset.page===p)); $$('.page').forEach(s=>s.classList.toggle('active',s.id===`page-${p}`)); $('#pageTitle').textContent={novo:'Novo registro',historico:'Histórico',alunos:'Alunos',admin:'Admin'}[p]||'Registro'; $('.sidebar').classList.remove('open'); if(p==='historico') atualizarHistorico(); if(p==='alunos') renderAlunos(); if(p==='admin') carregarUsuarios(); }
+async function carregarUsuarios(){
+  if(labelRole()!=='admin') return;
+  const snap = await getDocs(collection(db,colecoes.usuarios));
+  state.allUsuarios = snap.docs.map(d=>({id:d.id,...d.data()}));
+  const box = $('#listaUsuarios');
+  if(box) box.innerHTML = state.allUsuarios.map(u=>`<div class="item"><h4>${escapeHtml(u.nome||u.email||'Usuário')}</h4><p>${escapeHtml(u.email||'')} • ${escapeHtml(u.role||u.perfil||'disciplinario')} • ${u.ativo===false?'inativo':'ativo'}</p></div>`).join('') || '<p class="muted">Nenhum usuário listado.</p>';
+}
+async function criarUsuarioAdmin(ev){
+  ev.preventDefault();
+  if(labelRole()!=='admin'){ toast('Apenas administradores podem criar usuários.','error'); return; }
+  const nome=$('#adminUserNome').value.trim();
+  const email=$('#adminUserEmail').value.trim();
+  const senha=$('#adminUserSenha').value;
+  const role=$('#adminUserPerfil').value;
+  if(!nome || !email || senha.length<6){ toast('Informe nome, e-mail e senha com pelo menos 6 caracteres.','error'); return; }
+  let secondaryApp=null;
+  try{
+    secondaryApp = initializeApp(firebaseConfig, 'secondary-'+Date.now());
+    const secondaryAuth = getAuth(secondaryApp);
+    const cred = await createUserWithEmailAndPassword(secondaryAuth,email,senha);
+    await setDoc(doc(db,colecoes.usuarios,cred.user.uid),{nome,email,role,ativo:true,createdAt:serverTimestamp(),criadoPor:state.user.email},{merge:true});
+    toast('Usuário criado com sucesso.');
+    $('#adminUserForm').reset();
+    await carregarUsuarios();
+  }catch(err){
+    toast('Erro ao criar usuário: '+(err?.message||err),'error');
+  }finally{
+    if(secondaryApp) try{ await deleteApp(secondaryApp); }catch(e){}
+  }
+}
 
 $('#loginForm').addEventListener('submit',async e=>{ e.preventDefault(); try{ await signInWithEmailAndPassword(auth,$('#loginEmail').value,$('#loginPassword').value); }catch(err){toast('Erro no login: '+err.message,'error')} });
-$('#setupForm').addEventListener('submit',criarContaInicial);
-$('#tabLogin').onclick=()=>mostrarAbaLogin('login'); $('#tabSetup').onclick=()=>mostrarAbaLogin('setup');
 $('#logoutBtn').onclick=()=>signOut(auth); $('#menuBtn').onclick=()=>$('.sidebar').classList.toggle('open'); $$('.nav').forEach(b=>b.onclick=()=>trocarPagina(b.dataset.page));
-$('#turmaSelect').onchange=preencherAlunos; $('#alunoSelect').onchange=atualizarResponsaveis; $('#registroForm').onsubmit=salvarRegistro; $('#limparForm').onclick=()=>{ $('#registroForm').reset(); renderControleSection(); }; $('#aplicarFiltros').onclick=renderHistorico; $('#exportarCsv').onclick=exportarCsv; $('#salvarAluno').onclick=salvarAluno; $('#importarAlunos').onclick=importarAlunos; $('#importarHistorico').onclick=importarHistorico; $('#salvarConfig').onclick=salvarConfig; $('#limparBanco').onclick=limparBancoDados; $('#modalClose').onclick=fecharModal; $('#modalBackdrop').onclick=fecharModal;
+$('#turmaSelect').onchange=preencherAlunos; $('#alunoSelect').onchange=atualizarResponsaveis; $('#registroForm').onsubmit=salvarRegistro; $('#limparForm').onclick=()=>{ $('#registroForm').reset(); renderControleSection(); }; $('#aplicarFiltros').onclick=renderHistorico; $('#exportarCsv').onclick=exportarCsv; $('#salvarAluno').onclick=salvarAluno; $('#importarAlunos').onclick=importarAlunos; $('#importarHistorico').onclick=importarHistorico; $('#importarAlunosArquivo').onclick=importarAlunosArquivo; $('#importarHistoricoArquivo').onclick=importarHistoricoArquivo; $('#adminUserForm').addEventListener('submit',criarUsuarioAdmin); $('#salvarConfig').onclick=salvarConfig; $('#limparBanco').onclick=limparBancoDados; $('#modalClose').onclick=fecharModal; $('#modalBackdrop').onclick=fecharModal;
 onAuthStateChanged(auth,async user=>{ state.user=user; $('#loginScreen').classList.toggle('hidden',!!user); $('#app').classList.toggle('hidden',!user); if(user){ await init(); await carregarPerfil(); await carregarConfig(); await carregarAlunos(); await atualizarHistorico(); } });

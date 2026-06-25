@@ -13,10 +13,6 @@
       <div class="login-brand"><img src="assets/logosesi.png" alt="SESI"><span>Dom Bosco</span></div>
       <h1>Registro Diário de Alunos</h1>
       <p>Controle de ocorrências, atendimentos, tarefas, uniforme e comunicação com responsáveis.</p>
-      <div class="login-tabs">
-        <button type="button" id="tabLogin" class="tab active">Entrar</button>
-        <button type="button" id="tabSetup" class="tab">Criar usuário</button>
-      </div>
       <form id="loginForm">
         <label>E-mail</label>
         <input id="loginEmail" type="email" required placeholder="seuemail@escola.com" />
@@ -24,21 +20,7 @@
         <input id="loginPassword" type="password" required placeholder="••••••••" />
         <button type="submit">Entrar</button>
       </form>
-      <form id="setupForm" class="hidden">
-        <label>Nome</label>
-        <input id="setupNome" required placeholder="Nome do usuário" />
-        <label>E-mail</label>
-        <input id="setupEmail" type="email" required placeholder="email@escola.com" />
-        <label>Senha</label>
-        <input id="setupPassword" type="password" required minlength="6" placeholder="mínimo 6 caracteres" />
-        <label>Perfil</label>
-        <select id="setupPerfil">
-          <option value="disciplinario">Disciplinário</option>
-          <option value="admin">Administrador</option>
-        </select>
-        <button type="submit">Criar usuário</button>
-      </form>
-      <small id="loginHelp">Entre com o e-mail e senha cadastrados no programa.</small>
+      <small id="loginHelp">Entre com o e-mail e senha cadastrado pelo administrador.</small>
     </div>
   </section>
 
@@ -113,16 +95,40 @@
             <button id="salvarAluno">Salvar aluno</button>
           </div>
         </div>
-        <div class="card">
-          <h3>Importação inicial</h3>
-          <p>Use apenas na primeira configuração do Firebase ou quando quiser atualizar a base.</p>
-          <button id="importarAlunos">Importar alunos da planilha SQL</button>
-          <button id="importarHistorico" class="secondary">Importar histórico do Registro Diário</button>
-        </div>
         <div id="listaAlunos" class="list compact"></div>
       </section>
 
       <section id="page-admin" class="page">
+        <div class="card stats"><div><strong id="statAlunos">0</strong><span>Alunos</span></div><div><strong id="statRegistros">0</strong><span>Registros</span></div><div><strong id="statEmails">0</strong><span>E-mails pendentes/enviados</span></div></div>
+
+        <div class="card">
+          <h3>Criar usuários do sistema</h3>
+          <p>Crie usuários para disciplinários, pedagogia ou administradores. A criação de usuários agora fica somente no painel Admin.</p>
+          <form id="adminUserForm" class="grid four">
+            <div><label>Nome</label><input id="adminUserNome" required placeholder="Nome do usuário" /></div>
+            <div><label>E-mail</label><input id="adminUserEmail" type="email" required placeholder="email@escola.com" /></div>
+            <div><label>Senha</label><input id="adminUserSenha" type="password" required minlength="6" placeholder="mínimo 6 caracteres" /></div>
+            <div><label>Perfil</label><select id="adminUserPerfil"><option value="disciplinario">Disciplinário</option><option value="pedagogia">Pedagogia</option><option value="admin">Administrador</option></select></div>
+            <div class="full"><button type="submit">Criar usuário</button></div>
+          </form>
+          <div id="listaUsuarios" class="list compact admin-users"></div>
+        </div>
+
+        <div class="card">
+          <h3>Importar nova planilha SQL de alunos</h3>
+          <p>Selecione um arquivo <strong>.xlsx, .xls ou .csv</strong>. O programa reconhece todas as colunas e mantém os dados completos na aba de cada aluno. O e-mail principal usado no envio será o <strong>E-MAIL MÃE</strong> quando existir.</p>
+          <input id="arquivoAlunosSql" type="file" accept=".xlsx,.xls,.csv" />
+          <div class="actions-row"><button id="importarAlunosArquivo">Importar planilha SQL selecionada</button><button id="importarAlunos" class="secondary">Importar base inicial inclusa</button></div>
+          <small class="muted">A importação atualiza alunos existentes quando o nome/turma/RA forem iguais e cria novos quando necessário.</small>
+        </div>
+
+        <div class="card">
+          <h3>Importar histórico do Registro Diário</h3>
+          <p>Importe uma planilha de histórico do Registro Diário. Todas as colunas serão preservadas no registro.</p>
+          <input id="arquivoHistorico" type="file" accept=".xlsx,.xls,.csv" />
+          <div class="actions-row"><button id="importarHistoricoArquivo">Importar histórico selecionado</button><button id="importarHistorico" class="secondary">Importar histórico inicial incluso</button></div>
+        </div>
+
         <div class="card">
           <h3>Configurações</h3>
           <p><strong>Envio de e-mail:</strong> pode ser feito pela Cloud Function inclusa na pasta <code>functions</code> ou pelo EmailJS configurado em <code>firebase-config.js</code>.</p>
@@ -132,7 +138,6 @@
           </div>
           <div class="actions-row"><button id="salvarConfig">Salvar configurações</button><button id="limparBanco" class="danger">Limpar todo o banco de dados</button></div>
         </div>
-        <div class="card stats"><div><strong id="statAlunos">0</strong><span>Alunos</span></div><div><strong id="statRegistros">0</strong><span>Registros</span></div><div><strong id="statEmails">0</strong><span>E-mails pendentes/enviados</span></div></div>
       </section>
     </section>
   </main>
@@ -145,6 +150,7 @@
       <div id="modalBody"></div>
     </div>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <script type="module" src="assets/app.js"></script>
 </body>
