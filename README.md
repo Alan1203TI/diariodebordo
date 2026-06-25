@@ -1,37 +1,94 @@
-# Registro Diário de Alunos - SESI Dom Bosco
+<!--
+TEMPLATE EMAILJS - REGISTRO DIÁRIO SESI DOM BOSCO
 
-Versão com:
+No EmailJS:
+1. Abra o template template_yg9cov8.
+2. Clique em "Editar conteúdo".
+3. Selecione/cole este HTML no conteúdo do e-mail.
+4. Mantenha:
+   Para enviar um e-mail: {{to_email}}
+   Responder a: {{reply_to}}
+   Cc: {{cc_email}}
+   De Nome: {{name}}
+   Assunto: Registro Diário - {{aluno_nome}} - {{controle_diario}}
+-->
 
-- Área do disciplinário com envio de e-mail aos responsáveis.
-- Nova área "Registro professor" para ocorrências internas de sala de aula.
-- Registros de professor salvos no histórico do aluno sem envio de e-mail.
-- Perfis separados:
-  - `disciplinario`: acessa Novo registro e Histórico.
-  - `professor`: acessa somente Registro professor.
-  - `pedagogia`: acessa Novo registro e Histórico.
-  - `admin`: acessa todas as áreas.
-- Painel Admin com criação de usuários, importação SQL/alunos e histórico.
+<div style="margin:0;padding:0;background:#f3f7fb;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
+  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#f3f7fb;padding:24px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" cellpadding="0" cellspacing="0" width="640" style="width:640px;max-width:96%;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #dbeafe;box-shadow:0 8px 24px rgba(15,23,42,.08);">
+          <tr>
+            <td style="background:#004a98;padding:22px 28px;">
+              <img src="https://alan1203ti.github.io/diariodebordo/assets/logosesi.png" alt="SESI Dom Bosco" style="display:block;max-width:260px;width:100%;height:auto;">
+            </td>
+          </tr>
 
-## Importante
-Os campos da área do professor foram criados com base em ocorrências comuns de sala de aula. Se houver uma imagem/formulário oficial com itens diferentes, substitua as opções no arquivo `assets/app.js`, função/trecho `professorForm` no HTML.
+          <tr>
+            <td style="padding:28px 32px 10px 32px;">
+              <h1 style="margin:0 0 8px 0;color:#003f88;font-size:26px;line-height:1.2;">Registro Diário</h1>
+              <p style="margin:0;color:#475569;font-size:15px;line-height:1.5;">
+                Prezada família,
+              </p>
+              <p style="margin:14px 0 0 0;color:#0f172a;font-size:15px;line-height:1.6;">
+                Informamos que foi realizado um registro no sistema de Registro Diário do aluno(a)
+                <strong>{{aluno_nome}}</strong>, da turma <strong>{{turma}}</strong>.
+              </p>
+            </td>
+          </tr>
 
-Atualização desta versão:
-- Adicionada opção para deletar usuários no painel Admin.
-- Usuário deletado do painel perde o acesso ao sistema mesmo que ainda exista no Firebase Authentication.
-- A aba completa do aluno agora busca registros antigos por ID, nome, turma e RA/matrícula quando disponível.
-- O histórico carregado foi ampliado para até 5000 registros para encontrar registros antigos do aluno.
+          <tr>
+            <td style="padding:16px 32px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;">
+                <tr>
+                  <td style="padding:16px 18px;font-size:15px;line-height:1.6;">
+                    <p style="margin:0 0 8px 0;"><strong style="color:#003f88;">Tipo de registro:</strong> {{controle_diario}}</p>
+                    <p style="margin:0 0 8px 0;"><strong style="color:#003f88;">Data do registro:</strong> {{data_registro}}</p>
+                    <p style="margin:0;"><strong style="color:#003f88;">Registrado por:</strong> {{registrado_por}}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
 
+          <tr>
+            <td style="padding:4px 32px 12px 32px;">
+              <h2 style="margin:12px 0 10px 0;color:#003f88;font-size:18px;border-bottom:1px solid #bfdbfe;padding-bottom:8px;">Detalhes do registro</h2>
+              <div style="font-size:15px;line-height:1.6;color:#0f172a;">
+                {{{detalhes_html}}}
+              </div>
+            </td>
+          </tr>
 
-## Atualização SQL - dados de alunos
+          <tr>
+            <td style="padding:4px 32px 12px 32px;">
+              <h2 style="margin:12px 0 10px 0;color:#003f88;font-size:18px;border-bottom:1px solid #bfdbfe;padding-bottom:8px;">Providências / observações</h2>
+              <p style="margin:0;font-size:15px;line-height:1.6;color:#0f172a;">{{observacoes}}</p>
+            </td>
+          </tr>
 
-A base inicial inclusa em `data/alunos-seed.json` foi atualizada com a planilha `SQL DADOS PARA FORMS ALAN.XLSX` contendo 865 alunos e as colunas: RA ALUNO, ALUNO NOME, CODIGO TURMA, E-MAIL, NOME DO PAI, E-MAIL DO PAI, NOME MÃE, E-MAIL MÃE, NOME RESPONSAVEL ACADEMICO e E-MAIL RESPONSAVEL ACADEMICO.
+          <tr>
+            <td style="padding:16px 32px;">
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;color:#334155;font-size:14px;line-height:1.5;">
+                Caso precisem de mais informações, entrem em contato com a escola.
+              </div>
+            </td>
+          </tr>
 
-Na importação de nova planilha SQL, o sistema reconhece automaticamente E-MAIL, E-MAIL DO PAI, E-MAIL MÃE e E-MAIL RESPONSAVEL ACADEMICO. Para envio aos responsáveis são usados mãe, pai e responsável acadêmico quando existirem. O campo E-MAIL do aluno é preservado na ficha completa, mas não é usado como destinatário principal dos responsáveis.
+          <tr>
+            <td style="padding:8px 32px 30px 32px;font-size:15px;line-height:1.5;color:#0f172a;">
+              Atenciosamente,<br>
+              <strong>Equipe disciplinar - SESI Dom Bosco</strong>
+            </td>
+          </tr>
 
-## Atualização dashboard
-- Dashboard passa a ser a primeira tela para perfis com acesso.
-- Menu reorganizado com Dashboard em primeiro.
-- Disciplinário e Pedagogia podem visualizar o Dashboard.
-- Datas aceitam padrão brasileiro dd/mm/aaaa e os filtros consideram registros importados do Excel.
-- Novo gráfico: professores com mais registros de ocorrência de aluno.
-- Gráficos com cores indicativas por tipo/gravidade.
+          <tr>
+            <td style="background:#003f88;color:#ffffff;padding:16px 32px;font-size:13px;line-height:1.5;">
+              SESI Dom Bosco • Registro Diário de Alunos
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</div>

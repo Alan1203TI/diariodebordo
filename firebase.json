@@ -1,20 +1,12 @@
 {
-  "hosting": {
-    "public": ".",
-    "ignore": [
-      "firebase.json",
-      "firestore.rules",
-      ".firebaserc.example",
-      "functions/**",
-      "README.md",
-      "**/.*",
-      "**/node_modules/**"
-    ]
-  },
-  "firestore": {
-    "rules": "firestore.rules"
-  },
-  "functions": {
-    "source": "functions"
+  "name": "registro-diario-functions",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": "20" },
+  "dependencies": {
+    "firebase-admin": "^12.5.0",
+    "firebase-functions": "^5.1.1",
+    "nodemailer": "^6.9.15"
   }
 }
