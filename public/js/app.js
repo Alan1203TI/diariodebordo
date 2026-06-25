@@ -140,14 +140,37 @@ function mapAlunoImportado(row={}){
     ativo:true
   };
 }
-function mapHistoricoImportado(row={}){
+function mapHistoricoImportado(row={}, opts={}){
   const r = normalizarLinhaPlanilha(row);
   const aluno = getField(r,['ALUNO','ALUNO NOME','NOME ALUNO','NOME DO ALUNO','Nome do aluno']) || r.ALUNO || '';
   const turma = getField(r,['TURMA','CODIGO TURMA','CÓDIGO TURMA','COD TURMA']) || r.TURMA || '';
-  const data = getField(r,['DATA','DATA DO REGISTRO','DATA REGISTRO','Data']) || today();
+  const dataRaw = getField(r,['DATA','DATA DO REGISTRO','DATA REGISTRO','Data','Hora de início']) || today();
+  const dateMode = opts.dateMode || opts.dataFormatoImportacao || 'IMPORT';
+  const dataISO = toISODate(dataRaw, dateMode) || toISODate(dataRaw) || '';
   const controle = getField(r,['CONTROLE DIÁRIO','CONTROLE DIARIO','TIPO','TIPO DE REGISTRO','REGISTRO']) || r['CONTROLE DIÁRIO'] || 'Histórico importado';
-  const baseId = getField(r,['ID','Nº','NUMERO','NÚMERO']) || `${aluno}-${turma}-${data}-${controle}`;
-  return { ...r, id:`hist-${slug(baseId)}`, ALUNO:aluno, TURMA:turma, DATA:toISODate(data) || data, dataOriginalImportada:data, ['CONTROLE DIÁRIO']:controle, createdAtLocal:new Date().toISOString(), statusEmail:'historico-importado' };
+
+  const out = {
+    ...r,
+    ALUNO: aluno,
+    TURMA: turma,
+    DATA: dataISO || dataRaw,
+    dataRegistroISO: dataISO || '',
+    dataOriginalImportada: dataRaw,
+    dataFormatoImportacao: dateMode,
+    ['CONTROLE DIÁRIO']: controle,
+    createdAtLocal: new Date().toISOString(),
+    statusEmail: 'historico-importado',
+    origemImportacao: 'historico',
+    importacaoId: opts.importacaoId || r.importacaoId || '',
+    arquivoImportado: opts.arquivoImportado || r.arquivoImportado || '',
+    linhaImportada: opts.index ?? r.linhaImportada ?? ''
+  };
+
+  if(!opts.uniqueIds){
+    const baseId = getField(r,['ID','Nº','NUMERO','NÚMERO']) || `${aluno}-${turma}-${dataRaw}-${controle}`;
+    out.id = `hist-${slug(baseId)}`;
+  }
+  return out;
 }
 async function lerPlanilhaArquivo(input){
   const file = input?.files?.[0];
@@ -244,68 +267,104 @@ function toast(msg,type='ok'){ const el=document.createElement('div'); el.classN
 function slug(s=''){return s.toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,90)||crypto.randomUUID();}
 function today(){ return new Date().toISOString().slice(0,10); }
 function escapeHtml(v=''){return String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
-function toISODate(v){
+function parseExcelSerialDate(n){
+  n = Number(n);
+  if(!Number.isFinite(n) || n < 20000 || n > 70000) return '';
+  const dt = new Date(Date.UTC(1899, 11, 30) + Math.round(n) * 86400000);
+  if(isNaN(dt)) return '';
+  return dt.toISOString().slice(0,10);
+}
+function validISODate(y,m,d){
+  y=Number(y); m=Number(m); d=Number(d);
+  if(!y || y<1900 || y>2100 || m<1 || m>12 || d<1 || d>31) return '';
+  const dt=new Date(Date.UTC(y,m-1,d));
+  if(dt.getUTCFullYear()!==y || dt.getUTCMonth()!==m-1 || dt.getUTCDate()!==d) return '';
+  return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+function resolveAno(y){
+  y=String(y||'').trim();
+  if(y.length===2) return Number(y)<50 ? `20${y}` : `19${y}`;
+  return y;
+}
+function toISODate(v, mode='auto'){
   if(v === undefined || v === null || v === '') return '';
-  if(v instanceof Date && !isNaN(v)) return v.toISOString().slice(0,10);
+  if(v instanceof Date && !isNaN(v)){
+    return validISODate(v.getFullYear(), v.getMonth()+1, v.getDate());
+  }
   const raw=String(v||'').trim();
   if(!raw) return '';
 
-  // Excel pode guardar datas como número serial. Corrige ao importar/ler planilhas antigas.
   if(/^\d+(\.\d+)?$/.test(raw)){
-    const n=Number(raw);
-    if(n>20000 && n<70000){
-      const dt=new Date(Math.round((n-25569)*86400*1000));
-      if(!isNaN(dt)) return dt.toISOString().slice(0,10);
-    }
+    const isoSerial=parseExcelSerialDate(raw);
+    if(isoSerial) return isoSerial;
   }
-
-  const validDate=(y,m,d)=>{
-    y=Number(y); m=Number(m); d=Number(d);
-    if(!y || y<1900 || y>2100 || m<1 || m>12 || d<1 || d>31) return '';
-    const dt=new Date(Date.UTC(y,m-1,d));
-    if(dt.getUTCFullYear()!==y || dt.getUTCMonth()!==m-1 || dt.getUTCDate()!==d) return '';
-    return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-  };
-  const notFutureScore=(iso)=>{
-    if(!iso) return 999999999;
-    const todayIso=today();
-    // Prioriza datas que não estão no futuro para evitar interpretar 03/07 como julho quando a planilha era 07/03.
-    return iso<=todayIso ? 0 : 1;
-  };
 
   const iso=raw.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
   if(iso){
-    const direct=validDate(iso[1], iso[2], iso[3]);
+    const direct=validISODate(iso[1], iso[2], iso[3]);
     if(direct) return direct;
-    // Corrige datas antigas salvas invertidas como 2026-30-03.
-    const swapped=validDate(iso[1], iso[3], iso[2]);
+    const swapped=validISODate(iso[1], iso[3], iso[2]);
     if(swapped) return swapped;
   }
 
-  const br=raw.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})/);
-  if(br){
-    let a=Number(br[1]), b=Number(br[2]), y=String(br[3]); if(y.length===2) y='20'+y;
-    const asBR=validDate(y,b,a); // dd/mm/aaaa
-    const asUS=validDate(y,a,b); // mm/dd/aaaa
-    if(asBR && !asUS) return asBR;
-    if(asUS && !asBR) return asUS;
-    if(asBR && asUS){
-      // Quando ambos são possíveis, escolhe a interpretação que não cria ocorrência em mês futuro.
-      const brScore=notFutureScore(asBR), usScore=notFutureScore(asUS);
-      if(usScore<brScore) return asUS;
-      return asBR;
+  const m=raw.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})/);
+  if(m){
+    const a=Number(m[1]), b=Number(m[2]), y=resolveAno(m[3]);
+    const asDMY=validISODate(y,b,a);
+    const asMDY=validISODate(y,a,b);
+
+    const forced=String(mode||'auto').toUpperCase();
+    if(forced==='DMY' && asDMY) return asDMY;
+    if(forced==='MDY' && asMDY) return asMDY;
+
+    if(asDMY && !asMDY) return asDMY;
+    if(asMDY && !asDMY) return asMDY;
+    if(asDMY && asMDY){
+      // Históricos exportados do Microsoft Forms/Excel geralmente vêm como mm/dd/aaaa.
+      // Por isso, quando a origem é importação e a data é ambígua, usamos MDY.
+      if(forced==='IMPORT' || forced==='FORMS') return asMDY;
+
+      // Para campos digitados no sistema, preferimos padrão brasileiro.
+      return asDMY;
     }
   }
 
   const dt=new Date(raw);
-  if(!isNaN(dt)) return dt.toISOString().slice(0,10);
+  if(!isNaN(dt)) return validISODate(dt.getFullYear(), dt.getMonth()+1, dt.getDate());
   return '';
+}
+function detectarFormatoDatasHistorico(rows=[]){
+  let dmy=0, mdy=0, total=0;
+  for(const row of rows||[]){
+    const r=normalizarLinhaPlanilha(row);
+    const raw=getField(r,['DATA','DATA DO REGISTRO','DATA REGISTRO','Data','Hora de início','Hora da última modificação']);
+    const m=String(raw||'').trim().match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})/);
+    if(!m) continue;
+    const a=Number(m[1]), b=Number(m[2]);
+    total++;
+    if(a>12 && b<=12) dmy++;
+    if(b>12 && a<=12) mdy++;
+  }
+  if(mdy>dmy) return 'MDY';
+  if(dmy>mdy) return 'DMY';
+  // Na dúvida, históricos exportados do Forms costumam ser mm/dd/aaaa.
+  return total ? 'MDY' : 'auto';
 }
 function formatDateBR(v){ const iso=toISODate(v); if(!iso) return v||''; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; }
 function todayBR(){ return formatDateBR(today()); }
 function dataRegistroKey(r){
-  // Prioriza a data original importada do Excel quando existir, pois algumas planilhas antigas chegam em formato mm/dd/aaaa.
-  return toISODate(r?.dataOriginalImportada) || toISODate(r?.DATA) || toISODate(r?.['DATA DO REGISTRO']) || toISODate(r?.['DATA REGISTRO']) || toISODate(r?.['DATA DA OCORRÊNCIA']) || toISODate(r?.['Data']) || toISODate(r?.createdAtLocal) || '';
+  const mode = r?.dataFormatoImportacao || r?.dateMode || (r?.statusEmail==='historico-importado' ? 'IMPORT' : 'auto');
+  return r?.dataRegistroISO
+    || r?.DATA_ISO
+    || r?.dataISO
+    || toISODate(r?.dataOriginalImportada, mode)
+    || toISODate(r?.DATA, mode)
+    || toISODate(r?.['DATA DO REGISTRO'], mode)
+    || toISODate(r?.['DATA REGISTRO'], mode)
+    || toISODate(r?.['DATA DA OCORRÊNCIA'], mode)
+    || toISODate(r?.['Data'], mode)
+    || toISODate(r?.createdAtLocal)
+    || '';
 }
 function emailsDoAluno(aluno){
   const dados = aluno?.dadosCompletos || {};
@@ -766,13 +825,19 @@ async function apagarRegistro(id){
 function abrirModal(){ $('#detailModal').classList.add('open'); }
 function fecharModal(){ $('#detailModal').classList.remove('open'); }
 async function salvarAluno(){ const nome=$('#alunoNome').value.trim(), turma=$('#alunoTurma').value.trim(); if(!nome||!turma){toast('Informe nome e turma.','error');return;} const id=slug(`${turma}-${nome}`); await setDoc(doc(db,colecoes.alunos,id),{nome,turma,emailResponsavel1:$('#alunoResp1').value.trim(),emailResponsavel2:$('#alunoResp2').value.trim(),telefoneResponsavel:$('#alunoTel').value.trim(),ativo:true,updatedAt:serverTimestamp()},{merge:true}); toast('Aluno salvo.'); ['#alunoNome','#alunoTurma','#alunoResp1','#alunoResp2','#alunoTel'].forEach(s=>$(s).value=''); await carregarAlunos(); }
-async function gravarListaImportada(colecao,lista,mapper){
+async function gravarListaImportada(colecao,lista,mapper,opts={}){
   let batch=writeBatch(db), count=0, lote=0;
   for(const item of lista){
-    const mapped=mapper(item);
-    const ref=doc(db,colecao,mapped.id||slug(JSON.stringify(mapped).slice(0,80)));
-    delete mapped.id;
-    batch.set(ref,{...mapped,importadoEm:serverTimestamp()},{merge:true});
+    const mapped=mapper(item,{...opts,index:count});
+    let ref;
+    if(mapped.id){
+      ref=doc(db,colecao,mapped.id);
+      delete mapped.id;
+      batch.set(ref,{...mapped,importadoEm:serverTimestamp(), ...(opts.importacaoId?{importacaoId:opts.importacaoId}:{}), ...(opts.arquivoImportado?{arquivoImportado:opts.arquivoImportado}:{})},{merge:true});
+    }else{
+      ref=doc(collection(db,colecao));
+      batch.set(ref,{...mapped,importadoEm:serverTimestamp(), ...(opts.importacaoId?{importacaoId:opts.importacaoId}:{}), ...(opts.arquivoImportado?{arquivoImportado:opts.arquivoImportado}:{})});
+    }
     count++; lote++;
     if(lote===400){ await batch.commit(); batch=writeBatch(db); lote=0; toast(`${count} importados...`); }
   }
@@ -780,12 +845,12 @@ async function gravarListaImportada(colecao,lista,mapper){
   toast(`${count} registros importados.`);
   return count;
 }
-async function importarJson(path,colecao,mapper){ const data=await fetch(path).then(r=>r.json()); return gravarListaImportada(colecao,data,mapper); }
+async function importarJson(path,colecao,mapper,opts={}){ const data=await fetch(path).then(r=>r.json()); return gravarListaImportada(colecao,data,mapper,opts); }
 async function importarAlunos(){
   await importarJson('data/alunos-seed.json',colecoes.alunos,mapAlunoImportado);
   await carregarAlunos();
 }
-async function importarHistorico(){ await importarJson('data/registros-historicos-seed.json',colecoes.ocorrencias,mapHistoricoImportado); await atualizarHistorico(); }
+async function importarHistorico(){ const importacaoId=`seed-${Date.now()}`; await importarJson('data/registros-historicos-seed.json',colecoes.ocorrencias,mapHistoricoImportado,{importacaoId,arquivoImportado:'registros-historicos-seed.json',dateMode:'IMPORT',uniqueIds:true}); await atualizarHistorico(); }
 async function importarAlunosArquivo(){
   try{
     if(labelRole()!=='admin'){ toast('Apenas administradores podem importar alunos.','error'); return; }
@@ -798,10 +863,15 @@ async function importarAlunosArquivo(){
 async function importarHistoricoArquivo(){
   try{
     if(labelRole()!=='admin'){ toast('Apenas administradores podem importar histórico.','error'); return; }
-    const rows = await lerPlanilhaArquivo($('#arquivoHistorico'));
+    const input=$('#arquivoHistorico');
+    const rows = await lerPlanilhaArquivo(input);
     if(!rows.length){ toast('A planilha não possui linhas para importar.','error'); return; }
-    await gravarListaImportada(colecoes.ocorrencias, rows, mapHistoricoImportado);
+    const arquivoImportado=input?.files?.[0]?.name || 'historico-importado.xlsx';
+    const importacaoId=`hist-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+    const dateMode=detectarFormatoDatasHistorico(rows);
+    await gravarListaImportada(colecoes.ocorrencias, rows, mapHistoricoImportado,{importacaoId,arquivoImportado,dateMode,uniqueIds:true});
     await atualizarHistorico();
+    toast(`Histórico importado sem substituir os anteriores. Formato de data detectado: ${dateMode}.`);
   }catch(err){ toast('Erro ao importar histórico: '+(err?.message||err),'error'); }
 }
 async function limparBancoDados(){
@@ -827,7 +897,7 @@ function aplicarMascaraDataBR(input){
     input.value=v;
   });
 }
-function aplicarMascarasData(){ ['#dataRegistro','#profDataRegistro','#dashInicio','#dashFim','#filtroInicio','#filtroFim','input[name="DATA DA OCORRÊNCIA"]'].forEach(sel=>document.querySelectorAll(sel).forEach(aplicarMascaraDataBR)); }
+function aplicarMascarasData(){ ['#dataRegistro','#profDataRegistro','#filtroInicio','#filtroFim','input[name="DATA DA OCORRÊNCIA"]'].forEach(sel=>document.querySelectorAll(sel).forEach(aplicarMascaraDataBR)); }
 
 function paginaInicialPorPerfil(){
   if(canAccessPage('dashboard')) return 'dashboard';
