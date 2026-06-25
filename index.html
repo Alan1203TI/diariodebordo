@@ -131,8 +131,8 @@
 
         <div class="card">
           <div class="grid four">
-            <div><label>Período inicial</label><input id="dashInicio" type="text" placeholder="dd/mm/aaaa" inputmode="numeric" /></div>
-            <div><label>Período final</label><input id="dashFim" type="text" placeholder="dd/mm/aaaa" inputmode="numeric" /></div>
+            <div><label>Período inicial</label><input id="dashInicio" type="date" /></div>
+            <div><label>Período final</label><input id="dashFim" type="date" /></div>
             <div><label>Turma</label><select id="dashTurma"><option value="">Todas</option></select></div>
             <div><label>Origem</label><select id="dashOrigem"><option value="">Todas</option><option value="disciplinar">Registro diário</option><option value="professor">Professor</option></select></div>
           </div>
@@ -143,7 +143,10 @@
 
         <div class="dashboard-grid">
           <div class="card"><h3>Ocorrências por tipo</h3><div id="chartTipo" class="chart-box"></div></div>
-          <div class="card"><h3>Ocorrências por mês</h3><div id="chartMes" class="chart-box"></div></div>
+          <div class="card">
+            <div class="chart-head"><h3>Ocorrências por dia</h3><label class="month-filter">Mês <input id="dashMesDetalhe" type="month"></label></div>
+            <div id="chartMes" class="chart-box"></div>
+          </div>
           <div class="card"><h3>Top 10 alunos com mais ocorrências</h3><div id="chartAlunos" class="chart-box"></div></div>
           <div class="card"><h3>Turmas com mais ocorrências</h3><div id="chartTurmas" class="chart-box"></div></div>
           <div class="card"><h3>Itens mais recorrentes do professor</h3><div id="chartItensProfessor" class="chart-box"></div></div>

@@ -53,3 +53,11 @@
 @media(max-width:560px){
   .dashboard-cards{grid-template-columns:1fr;}
 }
+
+
+.chart-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.chart-head h3{margin:0}
+.month-filter{display:flex;align-items:center;gap:8px;font-size:13px;color:#334155;font-weight:700}
+.month-filter input{padding:8px 10px;border:1px solid #cbd5e1;border-radius:10px}
+.bar-fill,.line-bar{background:linear-gradient(180deg,#38bdf8,#1d4ed8)!important}
+.dash-table .mini{padding:7px 10px;border-radius:9px;font-size:12px}

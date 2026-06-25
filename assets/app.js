@@ -250,9 +250,20 @@ function toISODate(v){
   const raw=String(v||'').trim();
   if(!raw) return '';
   const iso=raw.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
-  if(iso){ const y=iso[1], m=iso[2].padStart(2,'0'), d=iso[3].padStart(2,'0'); return `${y}-${m}-${d}`; }
+  if(iso){
+    let y=iso[1], m=Number(iso[2]), d=Number(iso[3]);
+    // Corrige datas antigas que tenham sido salvas invertidas como 2026-30-03.
+    if(m>12 && d<=12){ const tmp=m; m=d; d=tmp; }
+    if(m>=1 && m<=12 && d>=1 && d<=31) return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  }
   const br=raw.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})/);
-  if(br){ let y=br[3]; if(y.length===2) y='20'+y; const m=br[2].padStart(2,'0'), d=br[1].padStart(2,'0'); return `${y}-${m}-${d}`; }
+  if(br){
+    let a=Number(br[1]), b=Number(br[2]), y=br[3]; if(y.length===2) y='20'+y;
+    // Aceita tanto dd/mm/aaaa quanto mm/dd/aaaa vindo de planilhas antigas.
+    let d=a, m=b;
+    if(b>12 && a<=12){ m=a; d=b; }
+    if(m>=1 && m<=12 && d>=1 && d<=31) return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  }
   const dt=new Date(raw);
   if(!isNaN(dt)) return dt.toISOString().slice(0,10);
   return '';
@@ -599,27 +610,50 @@ function mesRegistro(r){
   const [y,m]=d.split('-'); return `${m}/${y}`;
 }
 function corIndicador(label=''){
-  const n=norm(label);
-  if(n.includes('reconhecimento') || n.includes('bom') || n.includes('positivo') || n.includes('destaque')) return '#16a34a';
-  if(n.includes('grave') || n.includes('suspens') || n.includes('advert') || n.includes('desrespeito') || n.includes('comportamento inadequado')) return '#dc2626';
-  if(n.includes('medio') || n.includes('saude') || n.includes('febre') || n.includes('atendimento')) return '#f97316';
-  if(n.includes('atras') || n.includes('uniforme') || n.includes('tarefa') || n.includes('livro') || n.includes('sem fazer')) return '#eab308';
-  if(n.includes('professor') || n.includes('conversa') || n.includes('postura')) return '#2563eb';
-  return '#0ea5e9';
+  return '#2563eb';
 }
 function chartBars(elId, data, maxItems=10){
   const el=$('#'+elId); if(!el) return;
   const rows=(data||[]).slice(0,maxItems);
   if(!rows.length){ el.innerHTML='<p class="muted">Sem dados para exibir.</p>'; return; }
   const max=Math.max(...rows.map(r=>r.value),1);
-  el.innerHTML=rows.map(r=>`<div class="bar-row"><span class="bar-label" title="${escapeHtml(r.label)}">${escapeHtml(r.label)}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.max(4,(r.value/max)*100)}%;background:${corIndicador(r.label)}"></div></div><strong>${r.value}</strong></div>`).join('');
+  el.innerHTML=rows.map(r=>`<div class="bar-row"><span class="bar-label" title="${escapeHtml(r.label)}">${escapeHtml(r.label)}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.max(4,(r.value/max)*100)}%"></div></div><strong>${r.value}</strong></div>`).join('');
 }
 function chartTimeline(elId, data){
   const el=$('#'+elId); if(!el) return;
-  const rows=[...(data||[])].sort((a,b)=>{ const ka=a.label==='Sem data'?'0000-00':a.label.split('/').reverse().join('-'); const kb=b.label==='Sem data'?'0000-00':b.label.split('/').reverse().join('-'); return ka.localeCompare(kb); }).slice(-12);
+  const rows=[...(data||[])].sort((a,b)=>String(a.key||a.label).localeCompare(String(b.key||b.label)));
   if(!rows.length){ el.innerHTML='<p class="muted">Sem dados para exibir.</p>'; return; }
   const max=Math.max(...rows.map(r=>r.value),1);
   el.innerHTML=`<div class="mini-line">${rows.map(r=>`<div class="line-col"><div class="line-bar" style="height:${Math.max(8,(r.value/max)*130)}px"></div><small>${escapeHtml(r.label)}</small><strong>${r.value}</strong></div>`).join('')}</div>`;
+}
+function mesesDisponiveisDashboard(lista){
+  const set=new Set();
+  (lista||[]).forEach(r=>{ const d=dataRegistroKey(r); if(/^\d{4}-\d{2}/.test(d)) set.add(d.slice(0,7)); });
+  return [...set].sort();
+}
+function preencherDashboardMes(lista){
+  const input=$('#dashMesDetalhe'); if(!input) return '';
+  const meses=mesesDisponiveisDashboard(lista);
+  const atual=input.value;
+  if(atual && meses.includes(atual)) return atual;
+  const escolhido=meses.length ? meses[meses.length-1] : new Date().toISOString().slice(0,7);
+  input.value=escolhido;
+  return escolhido;
+}
+function ocorrenciasPorDiaNoMes(lista, mesAno){
+  if(!mesAno) return [];
+  const [ano,mes]=mesAno.split('-').map(Number);
+  const totalDias=new Date(ano, mes, 0).getDate();
+  const contagem=new Map();
+  for(let d=1; d<=totalDias; d++){
+    const dia=String(d).padStart(2,'0');
+    contagem.set(`${ano}-${String(mes).padStart(2,'0')}-${dia}`, {key:`${ano}-${String(mes).padStart(2,'0')}-${dia}`, label:dia, value:0});
+  }
+  (lista||[]).forEach(r=>{
+    const d=dataRegistroKey(r);
+    if(d && d.slice(0,7)===mesAno && contagem.has(d)) contagem.get(d).value++;
+  });
+  return [...contagem.values()];
 }
 function preencherDashboardTurmas(){
   const sel=$('#dashTurma'); if(!sel) return;
@@ -652,7 +686,8 @@ function renderDashboard(){
   const cardsEl=$('#dashboardCards');
   if(cardsEl) cardsEl.innerHTML=cards.map(([t,v])=>`<div class="dash-card"><span>${escapeHtml(t)}</span><strong>${escapeHtml(v)}</strong></div>`).join('');
   chartBars('chartTipo', contarPor(lista,r=>r['CONTROLE DIÁRIO']||r.tipoRegistro||'Registro'), 10);
-  chartTimeline('chartMes', contarPor(lista, mesRegistro));
+  const mesSelecionado=preencherDashboardMes(lista);
+  chartTimeline('chartMes', ocorrenciasPorDiaNoMes(lista, mesSelecionado));
   chartBars('chartAlunos', porAluno, 10);
   chartBars('chartTurmas', porTurma, 10);
   chartBars('chartItensProfessor', contarPor(lista.filter(r=>origemRegistro(r)==='professor'), r=>r['ITEM DE REFERÊNCIA']||r['ITEM DE REFERENCIA']||r.ITEM), 10);
@@ -665,12 +700,21 @@ function renderDashboard(){
       const regs=lista.filter(r=>(r.ALUNO||'')===a.label).sort((x,y)=>String(dataRegistroKey(y)).localeCompare(String(dataRegistroKey(x))));
       const ultimo=regs[0]||{};
       const tipo=contarPor(regs,r=>r['CONTROLE DIÁRIO']||r.tipoRegistro||'Registro')[0]?.label||'-';
-      return `<tr><td>${escapeHtml(a.label)}</td><td>${escapeHtml(ultimo.TURMA||'-')}</td><td>${a.value}</td><td>${escapeHtml(tipo)}</td><td>${escapeHtml(formatDateBR(dataRegistroKey(ultimo))||'-')}</td></tr>`;
+      return `<tr><td>${escapeHtml(a.label)}</td><td>${escapeHtml(ultimo.TURMA||'-')}</td><td>${a.value}</td><td>${escapeHtml(tipo)}</td><td>${escapeHtml(formatDateBR(dataRegistroKey(ultimo))||'-')}</td><td><button type="button" class="mini" data-dashboard-aluno="${escapeHtml(a.label)}">Ver registros</button></td></tr>`;
     }).join('');
-    table.innerHTML=`<table class="dash-table"><thead><tr><th>Aluno</th><th>Turma</th><th>Total</th><th>Tipo mais frequente</th><th>Último registro</th></tr></thead><tbody>${rows||'<tr><td colspan="5">Sem dados.</td></tr>'}</tbody></table>`;
+    table.innerHTML=`<table class="dash-table"><thead><tr><th>Aluno</th><th>Turma</th><th>Total</th><th>Tipo mais frequente</th><th>Último registro</th><th>Ação</th></tr></thead><tbody>${rows||'<tr><td colspan="6">Sem dados.</td></tr>'}</tbody></table>`;
+    $$('[data-dashboard-aluno]').forEach(btn=>btn.onclick=()=>abrirHistoricoDoAluno(btn.dataset.dashboardAluno));
   }
 }
 
+function abrirHistoricoDoAluno(nomeAluno){
+  trocarPagina('historico');
+  const busca=$('#filtroBusca'); if(busca) busca.value=nomeAluno||'';
+  const turma=$('#filtroTurma'); if(turma) turma.value='';
+  const ini=$('#filtroInicio'); if(ini) ini.value='';
+  const fim=$('#filtroFim'); if(fim) fim.value='';
+  renderHistorico();
+}
 function renderHistorico(){ const busca=$('#filtroBusca').value.toLowerCase(), turma=$('#filtroTurma').value, ini=$('#filtroInicio').value, fim=$('#filtroFim').value; let lista=state.historico.filter(r=>(!turma||r.TURMA===turma)&&(!toISODate(ini)||dataRegistroKey(r)>=toISODate(ini))&&(!toISODate(fim)||dataRegistroKey(r)<=toISODate(fim)));  if(busca) lista=lista.filter(r=>JSON.stringify(r).toLowerCase().includes(busca)); $('#listaHistorico').innerHTML=lista.map(r=>`<article class="item clickable" data-registro="${r.id}"><h4>${escapeHtml(r.ALUNO||'')}</h4><p><strong>Turma:</strong> ${escapeHtml(r.TURMA||'')} • <strong>Data:</strong> ${escapeHtml(formatDateBR(dataRegistroKey(r))||'')} • <strong>Registrado por:</strong> ${escapeHtml(registroAutorDisplay(r))}</p><p>${escapeHtml(r['DESCREVA O OCORRIDO']||r['DESCREVA O RECONHECIMENTO']||r['MOTIVO']||r['SINTOMAS']||'Clique para ver todas as informações do registro.')}</p><div class="badges"><span class="badge">${escapeHtml(r['CONTROLE DIÁRIO']||'Registro')}</span>${r.origem==='professor'?'<span class="badge">Registro professor</span>':`<span class="badge">E-mail: ${escapeHtml(r.statusEmail||'não informado')}</span>`}</div></article>`).join('') || '<div class="card">Nenhum registro encontrado.</div>'; $$('[data-registro]').forEach(el=>el.onclick=()=>abrirRegistro(el.dataset.registro)); }
 function renderAlunos(){ $('#listaAlunos').innerHTML=state.alunos.slice(0,700).map(a=>`<div class="item clickable" data-aluno="${a.id}"><h4>${escapeHtml(a.nome)}</h4><p>${escapeHtml(a.turma||'')}</p><p>${emailsDoAluno(a).map(escapeHtml).join(', ')||'Sem e-mail cadastrado'}</p><div class="badges"><span class="badge">Ver aba completa</span></div></div>`).join(''); $$('[data-aluno]').forEach(el=>el.onclick=()=>abrirAluno(el.dataset.aluno)); }
 function keyValuesTable(obj){ const rows=Object.entries(obj||{}).filter(([k,v])=>!['id','dadosCompletos'].includes(k)&&v!==undefined&&v!==null&&String(v).trim()!=='' ); return `<div class="detail-grid">${rows.map(([k,v])=>`<div><strong>${escapeHtml(k)}</strong><span>${escapeHtml(v)}</span></div>`).join('')}</div>`; }
@@ -855,5 +899,5 @@ aplicarMascarasData();
 $('#loginForm').addEventListener('submit',async e=>{ e.preventDefault(); try{ await signInWithEmailAndPassword(auth,$('#loginEmail').value,$('#loginPassword').value); }catch(err){toast('Erro no login: '+err.message,'error')} });
 if($('#changePasswordForm')) $('#changePasswordForm').addEventListener('submit',trocarSenhaInicial);
 $('#logoutBtn').onclick=()=>signOut(auth); $('#menuBtn').onclick=()=>$('.sidebar').classList.toggle('open'); $$('.nav').forEach(b=>b.onclick=()=>trocarPagina(b.dataset.page));
-$('#turmaSelect').onchange=preencherAlunos; $('#alunoSelect').onchange=atualizarResponsaveis; if($('#profTurmaSelect')) $('#profTurmaSelect').onchange=preencherAlunosProfessor; if($('#profAlunoSelect')) $('#profAlunoSelect').onchange=atualizarAlunoProfessor; $('#registroForm').onsubmit=salvarRegistro; if($('#professorForm')) $('#professorForm').onsubmit=salvarRegistroProfessor; $('#limparForm').onclick=()=>{ $('#registroForm').reset(); renderControleSection(); }; if($('#limparProfessorForm')) $('#limparProfessorForm').onclick=()=>{ $('#professorForm').reset(); const pn=$('#professorNome'); if(pn) pn.value=state.profile.nome || state.user.email; }; $('#aplicarFiltros').onclick=renderHistorico; $('#exportarCsv').onclick=exportarCsv; if($('#atualizarDashboard')) $('#atualizarDashboard').onclick=renderDashboard; if($('#limparDashboard')) $('#limparDashboard').onclick=()=>{ ['#dashInicio','#dashFim','#dashOrigem'].forEach(s=>{ if($(s)) $(s).value=''; }); if($('#dashTurma')) $('#dashTurma').value=''; renderDashboard(); }; $('#salvarAluno').onclick=salvarAluno; $('#importarAlunos').onclick=importarAlunos; $('#importarHistorico').onclick=importarHistorico; $('#importarAlunosArquivo').onclick=importarAlunosArquivo; $('#importarHistoricoArquivo').onclick=importarHistoricoArquivo; $('#adminUserForm').addEventListener('submit',criarUsuarioAdmin); $('#salvarConfig').onclick=salvarConfig; $('#limparBanco').onclick=limparBancoDados; $('#modalClose').onclick=fecharModal; $('#modalBackdrop').onclick=fecharModal;
+$('#turmaSelect').onchange=preencherAlunos; $('#alunoSelect').onchange=atualizarResponsaveis; if($('#profTurmaSelect')) $('#profTurmaSelect').onchange=preencherAlunosProfessor; if($('#profAlunoSelect')) $('#profAlunoSelect').onchange=atualizarAlunoProfessor; $('#registroForm').onsubmit=salvarRegistro; if($('#professorForm')) $('#professorForm').onsubmit=salvarRegistroProfessor; $('#limparForm').onclick=()=>{ $('#registroForm').reset(); renderControleSection(); }; if($('#limparProfessorForm')) $('#limparProfessorForm').onclick=()=>{ $('#professorForm').reset(); const pn=$('#professorNome'); if(pn) pn.value=state.profile.nome || state.user.email; }; $('#aplicarFiltros').onclick=renderHistorico; $('#exportarCsv').onclick=exportarCsv; if($('#atualizarDashboard')) $('#atualizarDashboard').onclick=renderDashboard; if($('#dashMesDetalhe')) $('#dashMesDetalhe').onchange=renderDashboard; if($('#limparDashboard')) $('#limparDashboard').onclick=()=>{ ['#dashInicio','#dashFim','#dashOrigem','#dashMesDetalhe'].forEach(s=>{ if($(s)) $(s).value=''; }); if($('#dashTurma')) $('#dashTurma').value=''; renderDashboard(); }; $('#salvarAluno').onclick=salvarAluno; $('#importarAlunos').onclick=importarAlunos; $('#importarHistorico').onclick=importarHistorico; $('#importarAlunosArquivo').onclick=importarAlunosArquivo; $('#importarHistoricoArquivo').onclick=importarHistoricoArquivo; $('#adminUserForm').addEventListener('submit',criarUsuarioAdmin); $('#salvarConfig').onclick=salvarConfig; $('#limparBanco').onclick=limparBancoDados; $('#modalClose').onclick=fecharModal; $('#modalBackdrop').onclick=fecharModal;
 onAuthStateChanged(auth,async user=>{ state.user=user; $('#loginScreen').classList.toggle('hidden',!!user); $('#app').classList.toggle('hidden',!user); if(user){ await init(); await carregarPerfil(); applyRolePermissions(); await carregarConfig(); await carregarAlunos(); await atualizarHistorico(); trocarPagina(paginaInicialPorPerfil()); } });
