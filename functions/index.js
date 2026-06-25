@@ -11,23 +11,27 @@ const SMTP_PASS = defineSecret('SMTP_PASS');
 const SMTP_HOST = defineSecret('SMTP_HOST');
 const SMTP_PORT = defineSecret('SMTP_PORT');
 
+function escapeHtml(v = '') {
+  return String(v ?? '').replace(/[&<>\"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;' }[c]));
+}
+function resumoCampos(r) {
+  const ignorar = ['id','TURMA','ALUNO','DATA','Email','disciplinario','alunoId','emailsResponsaveis','emailCopia','statusEmail','createdAt','createdAtLocal','updatedAt','emailSentAt','emailErro','alunoDados','textoEmail'];
+  return Object.entries(r || {}).filter(([k,v]) => !ignorar.includes(k) && v !== undefined && v !== null && String(v).trim() !== '')
+    .map(([k,v]) => `<tr><td style="padding:8px;border:1px solid #ddd"><b>${escapeHtml(k)}</b></td><td style="padding:8px;border:1px solid #ddd">${escapeHtml(v)}</td></tr>`).join('');
+}
 function htmlEmail(r) {
-  const ocorrido = r['DESCREVA O OCORRIDO'] || r['DESCREVA O OCORRIDO 2'] || r.MOTIVO || 'Registro diário realizado.';
-  const providencia = r['PROVIDÊNCIA'] || r['CONTATO COM RESPONSÁVEIS'] || '';
+  const texto = r.textoEmail || `Prezados responsáveis,\n\nInformamos que foi realizado um registro diário referente ao(à) aluno(a) ${r.ALUNO || ''}.`;
   return `
   <div style="font-family:Arial,sans-serif;line-height:1.5;color:#1f2937">
     <h2 style="color:#174ea6">Registro Diário de Aluno</h2>
-    <p>Prezados responsáveis,</p>
-    <p>Informamos que foi realizado um registro diário referente ao estudante abaixo:</p>
-    <table style="border-collapse:collapse;width:100%;max-width:680px">
-      <tr><td style="padding:8px;border:1px solid #ddd"><b>Aluno</b></td><td style="padding:8px;border:1px solid #ddd">${r.ALUNO || ''}</td></tr>
-      <tr><td style="padding:8px;border:1px solid #ddd"><b>Turma</b></td><td style="padding:8px;border:1px solid #ddd">${r.TURMA || ''}</td></tr>
-      <tr><td style="padding:8px;border:1px solid #ddd"><b>Data</b></td><td style="padding:8px;border:1px solid #ddd">${r.DATA || ''}</td></tr>
-      <tr><td style="padding:8px;border:1px solid #ddd"><b>Controle</b></td><td style="padding:8px;border:1px solid #ddd">${r['CONTROLE DIÁRIO'] || ''}</td></tr>
-      <tr><td style="padding:8px;border:1px solid #ddd"><b>Ocorrido</b></td><td style="padding:8px;border:1px solid #ddd">${ocorrido}</td></tr>
-      <tr><td style="padding:8px;border:1px solid #ddd"><b>Providência</b></td><td style="padding:8px;border:1px solid #ddd">${providencia}</td></tr>
+    <p style="white-space:pre-line">${escapeHtml(texto)}</p>
+    <table style="border-collapse:collapse;width:100%;max-width:760px;margin-top:18px">
+      <tr><td style="padding:8px;border:1px solid #ddd"><b>Aluno</b></td><td style="padding:8px;border:1px solid #ddd">${escapeHtml(r.ALUNO || '')}</td></tr>
+      <tr><td style="padding:8px;border:1px solid #ddd"><b>Turma</b></td><td style="padding:8px;border:1px solid #ddd">${escapeHtml(r.TURMA || '')}</td></tr>
+      <tr><td style="padding:8px;border:1px solid #ddd"><b>Data</b></td><td style="padding:8px;border:1px solid #ddd">${escapeHtml(r.DATA || '')}</td></tr>
+      <tr><td style="padding:8px;border:1px solid #ddd"><b>Controle</b></td><td style="padding:8px;border:1px solid #ddd">${escapeHtml(r['CONTROLE DIÁRIO'] || '')}</td></tr>
+      ${resumoCampos(r)}
     </table>
-    <p>Atenciosamente,<br>${r.disciplinario || 'Equipe escolar'}</p>
   </div>`;
 }
 
