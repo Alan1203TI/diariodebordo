@@ -2,7 +2,7 @@ import { firebaseConfig } from '../firebase-config.js';
 const emailJsConfig = window.emailJsConfig || { enabled:false, publicKey:'', serviceId:'', templateId:'' };
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
-import { getFirestore, collection, doc, getDoc, setDoc, addDoc, getDocs, query, where, orderBy, limit, serverTimestamp, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
+import { getFirestore, collection, doc, getDoc, setDoc, addDoc, getDocs, deleteDoc, query, where, orderBy, limit, serverTimestamp, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -110,6 +110,14 @@ function formatDateBR(v){ if(!v) return ''; const [y,m,d]=String(v).slice(0,10).
 function emailsDoAluno(aluno){ return [aluno?.emailResponsavel1, aluno?.emailResponsavel2, aluno?.emailResponsavel3, aluno?.['E-MAIL MÃE'], aluno?.dadosCompletos?.['E-MAIL MÃE']].filter(Boolean).map(e=>String(e).trim()).filter(e=>e.includes('@')); }
 function alunoSelecionado(){ return state.alunos.find(a=>a.id===$('#alunoSelect').value); }
 function labelRole(){ return state.profile.role || state.profile.perfil || 'disciplinario'; }
+function usuarioDisplay(){
+  const nome = state.profile?.nome || state.profile?.name || state.user?.displayName || state.user?.email || 'Usuário';
+  return `${nome} (${labelRole()})`;
+}
+function registroAutorDisplay(r={}){
+  return r.registradoPorDisplay || (r.registradoPorNome ? `${r.registradoPorNome} (${r.registradoPorCargo || 'disciplinario'})` : (r.disciplinario || r.Email || 'Não informado'));
+}
+function registroEmailInstitucional(){ return 'Registrado pela equipe disciplinar do SESI Dom Bosco.'; }
 
 async function init(){ $('#dataRegistro').value = today(); renderCampos(); }
 function renderCampos(){
@@ -156,11 +164,11 @@ async function carregarPerfil(){
   const s=await getDoc(ref);
   if(s.exists()) state.profile=s.data(); else { state.profile={nome:state.user.email, email:state.user.email, role:'disciplinario', ativo:true}; await setDoc(ref,{...state.profile,createdAt:serverTimestamp()},{merge:true}); }
   if(state.profile.ativo===false){ toast('Usuário desativado. Procure o administrador.','error'); await signOut(auth); return; }
-  $('#userLabel').textContent=`${state.user.email} • ${labelRole()}`;
+  $('#userLabel').textContent=usuarioDisplay();
   $$('.admin-only').forEach(e=>e.style.display=labelRole()==='admin'?'block':'none');
 }
 function resumoCampos(registro){
-  const ignorar=['id','TURMA','ALUNO','DATA','Email','disciplinario','alunoId','emailsResponsaveis','emailCopia','statusEmail','createdAt','createdAtLocal','updatedAt','emailSentAt','emailErro','emailDestino','textoEmail','alunoDados'];
+  const ignorar=['id','TURMA','ALUNO','DATA','Email','disciplinario','alunoId','emailsResponsaveis','emailCopia','statusEmail','createdAt','createdAtLocal','updatedAt','emailSentAt','emailErro','emailDestino','textoEmail','detalhes_html','alunoDados','registradoPorNome','registradoPorCargo','registradoPorDisplay','emailPedagogia','emailCopiaStatus'];
   return Object.entries(registro).filter(([k,v])=>!ignorar.includes(k)&&v!==undefined&&v!==null&&String(v).trim()!=='').map(([k,v])=>`${k}: ${v}`).join('\n');
 }
 
@@ -174,7 +182,7 @@ function detalhesRegistroHtml(registro){
   return '<ul style="margin:0;padding-left:20px;color:#0f172a;line-height:1.6;">' + itens.map(i=>`<li>${escapeHtml(i)}</li>`).join('') + '</ul>';
 }
 function logoUrlEmail(){
-  try { return new URL('assets/logo-sesi-dom-bosco.png', window.location.href).href; }
+  try { return new URL('assets/logosesi.png', window.location.href).href; }
   catch(e){ return ''; }
 }
 
@@ -198,7 +206,7 @@ function textoEmailAutomatico(registro){
 async function salvarRegistro(ev){ ev.preventDefault(); const aluno=alunoSelecionado(); if(!aluno){ toast('Selecione um aluno.','error'); return; }
   const dados={}; new FormData($('#registroForm')).forEach((v,k)=>dados[k]=v);
   const emails=emailsDoAluno(aluno);
-  const registro={...dados,TURMA:aluno.turma,ALUNO:aluno.nome,DATA:$('#dataRegistro').value,Email:state.user.email,disciplinario:state.user.email,alunoId:aluno.id,alunoDados:aluno.dadosCompletos||aluno,emailsResponsaveis:emails,emailCopia:state.config.emailCopia||'',statusEmail:emails.length?'pendente':'sem-email',createdAt:serverTimestamp(),createdAtLocal:new Date().toISOString()};
+  const registro={...dados,TURMA:aluno.turma,ALUNO:aluno.nome,DATA:$('#dataRegistro').value,Email:state.user.email,disciplinario:state.user.email,registradoPorNome:state.profile?.nome||state.user.email,registradoPorCargo:labelRole(),registradoPorDisplay:usuarioDisplay(),alunoId:aluno.id,alunoDados:aluno.dadosCompletos||aluno,emailsResponsaveis:emails,emailCopia:state.config.emailCopia||'',statusEmail:emails.length?'pendente':'sem-email',createdAt:serverTimestamp(),createdAtLocal:new Date().toISOString()};
   registro.textoEmail = textoEmailAutomatico(registro);
   const ref=await addDoc(collection(db,colecoes.ocorrencias),registro);
   await tentarEmailJs(registro,ref.id);
@@ -219,7 +227,8 @@ async function tentarEmailJs(registro,id){
   const observacoes = registro['PROVIDÊNCIA'] || registro['CONTATO COM RESPONSÁVEIS'] || registro['COMUNICADO À FAMÍLIA'] || registro['SANÇÕES'] || '';
   const params={
     // Variáveis usadas no template do EmailJS
-    to_email: destinatarios[0],
+    to_email: destinatarios.join(','),
+    cc_email: (registro.emailCopia || '').trim(),
     reply_to: state.user?.email || 'naoresponder@sesi.local',
     name: 'SESI Dom Bosco',
     logo_url: logoUrlEmail(),
@@ -230,29 +239,40 @@ async function tentarEmailJs(registro,id){
     data_registro: formatDateBR(registro.DATA) || registro.DATA || '',
     detalhes_registro: detalhes,
     observacoes: observacoes,
-    registrado_por: registro.disciplinario || state.user?.email || '',
+    registrado_por: registroEmailInstitucional(),
     // Variáveis extras para compatibilidade com modelos padrão do EmailJS
     email: state.user?.email || 'naoresponder@sesi.local',
-    message: registro.textoEmail || detalhes,
+    message: detalhes,
     subject: `Registro Diário - ${registro.ALUNO || ''} - ${registro['CONTROLE DIÁRIO'] || ''}`
   };
   try{
     console.log('EmailJS params', params);
     await emailjs.send(emailJsConfig.serviceId,emailJsConfig.templateId,params,{publicKey:emailJsConfig.publicKey});
-    await setDoc(doc(db,colecoes.ocorrencias,id),{statusEmail:'enviado-emailjs',emailSentAt:serverTimestamp(),emailDestino:params.to_email},{merge:true});
+    await setDoc(doc(db,colecoes.ocorrencias,id),{statusEmail:'enviado-emailjs',emailSentAt:serverTimestamp(),emailDestino:params.to_email,emailPedagogia:params.cc_email||''},{merge:true});
   }catch(e){
     const erro = e?.text || e?.message || JSON.stringify(e) || String(e);
     console.error('Erro EmailJS:', e, 'Params:', params);
-    await setDoc(doc(db,colecoes.ocorrencias,id),{statusEmail:'erro-emailjs',emailErro:erro,emailDestino:params.to_email},{merge:true});
+    await setDoc(doc(db,colecoes.ocorrencias,id),{statusEmail:'erro-emailjs',emailErro:erro,emailDestino:params.to_email,emailPedagogia:params.cc_email||''},{merge:true});
     toast('Erro ao enviar e-mail: '+erro,'error');
   }
 }
 async function atualizarHistorico(){ const snap=await getDocs(query(collection(db,colecoes.ocorrencias), orderBy('createdAtLocal','desc'), limit(500))); state.historico=snap.docs.map(d=>({id:d.id,...d.data()})); renderHistorico(); const sr=$('#statRegistros'); if(sr) sr.textContent=state.historico.length; const se=$('#statEmails'); if(se) se.textContent=state.historico.filter(r=>['pendente','enviado-cloud','enviado-emailjs'].includes(r.statusEmail)).length; }
-function renderHistorico(){ const busca=$('#filtroBusca').value.toLowerCase(), turma=$('#filtroTurma').value, ini=$('#filtroInicio').value, fim=$('#filtroFim').value; let lista=state.historico.filter(r=>(!turma||r.TURMA===turma)&&(!ini||r.DATA>=ini)&&(!fim||r.DATA<=fim)); if(busca) lista=lista.filter(r=>JSON.stringify(r).toLowerCase().includes(busca)); $('#listaHistorico').innerHTML=lista.map(r=>`<article class="item clickable" data-registro="${r.id}"><h4>${escapeHtml(r.ALUNO||'')}</h4><p><strong>Turma:</strong> ${escapeHtml(r.TURMA||'')} • <strong>Data:</strong> ${escapeHtml(formatDateBR(r.DATA)||'')}</p><p>${escapeHtml(r['DESCREVA O OCORRIDO']||r['DESCREVA O RECONHECIMENTO']||r['MOTIVO']||r['SINTOMAS']||'Clique para ver todas as informações do registro.')}</p><div class="badges"><span class="badge">${escapeHtml(r['CONTROLE DIÁRIO']||'Registro')}</span><span class="badge">E-mail: ${escapeHtml(r.statusEmail||'não informado')}</span></div></article>`).join('') || '<div class="card">Nenhum registro encontrado.</div>'; $$('[data-registro]').forEach(el=>el.onclick=()=>abrirRegistro(el.dataset.registro)); }
+function renderHistorico(){ const busca=$('#filtroBusca').value.toLowerCase(), turma=$('#filtroTurma').value, ini=$('#filtroInicio').value, fim=$('#filtroFim').value; let lista=state.historico.filter(r=>(!turma||r.TURMA===turma)&&(!ini||r.DATA>=ini)&&(!fim||r.DATA<=fim)); if(busca) lista=lista.filter(r=>JSON.stringify(r).toLowerCase().includes(busca)); $('#listaHistorico').innerHTML=lista.map(r=>`<article class="item clickable" data-registro="${r.id}"><h4>${escapeHtml(r.ALUNO||'')}</h4><p><strong>Turma:</strong> ${escapeHtml(r.TURMA||'')} • <strong>Data:</strong> ${escapeHtml(formatDateBR(r.DATA)||'')} • <strong>Registrado por:</strong> ${escapeHtml(registroAutorDisplay(r))}</p><p>${escapeHtml(r['DESCREVA O OCORRIDO']||r['DESCREVA O RECONHECIMENTO']||r['MOTIVO']||r['SINTOMAS']||'Clique para ver todas as informações do registro.')}</p><div class="badges"><span class="badge">${escapeHtml(r['CONTROLE DIÁRIO']||'Registro')}</span><span class="badge">E-mail: ${escapeHtml(r.statusEmail||'não informado')}</span></div></article>`).join('') || '<div class="card">Nenhum registro encontrado.</div>'; $$('[data-registro]').forEach(el=>el.onclick=()=>abrirRegistro(el.dataset.registro)); }
 function renderAlunos(){ $('#listaAlunos').innerHTML=state.alunos.slice(0,700).map(a=>`<div class="item clickable" data-aluno="${a.id}"><h4>${escapeHtml(a.nome)}</h4><p>${escapeHtml(a.turma||'')}</p><p>${emailsDoAluno(a).map(escapeHtml).join(', ')||'Sem e-mail cadastrado'}</p><div class="badges"><span class="badge">Ver aba completa</span></div></div>`).join(''); $$('[data-aluno]').forEach(el=>el.onclick=()=>abrirAluno(el.dataset.aluno)); }
 function keyValuesTable(obj){ const rows=Object.entries(obj||{}).filter(([k,v])=>!['id','dadosCompletos'].includes(k)&&v!==undefined&&v!==null&&String(v).trim()!=='' ); return `<div class="detail-grid">${rows.map(([k,v])=>`<div><strong>${escapeHtml(k)}</strong><span>${escapeHtml(v)}</span></div>`).join('')}</div>`; }
 function abrirAluno(id){ const a=state.alunos.find(x=>x.id===id); if(!a) return; state.alunoAberto=a; const regs=state.historico.filter(r=>r.alunoId===id || (r.ALUNO===a.nome && r.TURMA===a.turma)); $('#modalTitle').textContent='Aba do aluno'; $('#modalBody').innerHTML=`<h3>${escapeHtml(a.nome)}</h3><p class="muted">${escapeHtml(a.turma||'')} • ${emailsDoAluno(a).map(escapeHtml).join(', ')||'Sem e-mail cadastrado'}</p><h4>Informações completas da planilha SQL</h4>${keyValuesTable(a.dadosCompletos||a)}<h4>Registros deste aluno</h4>${regs.length?regs.map(r=>`<div class="mini-card" data-modal-registro="${r.id}"><strong>${escapeHtml(formatDateBR(r.DATA)||'')}</strong> — ${escapeHtml(r['CONTROLE DIÁRIO']||'Registro')}<br><span>${escapeHtml(r['DESCREVA O OCORRIDO']||r['DESCREVA O RECONHECIMENTO']||r['MOTIVO']||'Clique para abrir')}</span></div>`).join(''):'<p>Nenhum registro encontrado para este aluno.</p>'}`; abrirModal(); $$('[data-modal-registro]').forEach(el=>el.onclick=()=>abrirRegistro(el.dataset.modalRegistro)); }
-function abrirRegistro(id){ const r=state.historico.find(x=>x.id===id); if(!r) return; $('#modalTitle').textContent='Detalhes do registro'; const aluno=state.alunos.find(a=>a.id===r.alunoId); $('#modalBody').innerHTML=`<h3>${escapeHtml(r.ALUNO||'')}</h3><p class="muted">${escapeHtml(r.TURMA||'')} • ${escapeHtml(formatDateBR(r.DATA)||'')}</p><div class="badges"><span class="badge">${escapeHtml(r['CONTROLE DIÁRIO']||'Registro')}</span><span class="badge">${escapeHtml(r.statusEmail||'sem status')}</span></div><h4>Informações do registro</h4>${keyValuesTable(r)}<h4>Texto automático do e-mail</h4><pre class="email-preview">${escapeHtml(r.textoEmail||textoEmailAutomatico(r))}</pre>${aluno?`<h4>Dados do aluno na planilha SQL</h4>${keyValuesTable(aluno.dadosCompletos||aluno)}`:''}`; abrirModal(); }
+function abrirRegistro(id){ const r=state.historico.find(x=>x.id===id); if(!r) return; $('#modalTitle').textContent='Detalhes do registro'; const aluno=state.alunos.find(a=>a.id===r.alunoId); const podeApagar=labelRole()==='admin'; $('#modalBody').innerHTML=`<h3>${escapeHtml(r.ALUNO||'')}</h3><p class="muted">${escapeHtml(r.TURMA||'')} • ${escapeHtml(formatDateBR(r.DATA)||'')} • Registrado por: ${escapeHtml(registroAutorDisplay(r))}</p><div class="badges"><span class="badge">${escapeHtml(r['CONTROLE DIÁRIO']||'Registro')}</span><span class="badge">${escapeHtml(r.statusEmail||'sem status')}</span>${r.emailPedagogia?`<span class="badge">Pedagogia: ${escapeHtml(r.emailPedagogia)}</span>`:''}</div>${podeApagar?`<div class="actions"><button type="button" class="danger" id="apagarRegistroBtn" data-id="${escapeHtml(r.id)}">Apagar registro</button></div>`:''}<h4>Informações do registro</h4>${keyValuesTable(r)}<h4>Texto automático do e-mail</h4><pre class="email-preview">${escapeHtml(r.textoEmail||textoEmailAutomatico(r))}</pre>${aluno?`<h4>Dados do aluno na planilha SQL</h4>${keyValuesTable(aluno.dadosCompletos||aluno)}`:''}`; abrirModal(); const btn=$('#apagarRegistroBtn'); if(btn) btn.onclick=()=>apagarRegistro(btn.dataset.id); }
+async function apagarRegistro(id){
+  if(labelRole()!=='admin'){ toast('Apenas administradores podem apagar registros.','error'); return; }
+  if(!confirm('Deseja realmente apagar este registro?')) return;
+  try{
+    await deleteDoc(doc(db,colecoes.ocorrencias,id));
+    state.historico = state.historico.filter(r=>r.id!==id);
+    fecharModal();
+    renderHistorico();
+    toast('Registro apagado com sucesso.');
+  }catch(err){ toast('Erro ao apagar registro: '+(err?.message||err),'error'); }
+}
 function abrirModal(){ $('#detailModal').classList.add('open'); }
 function fecharModal(){ $('#detailModal').classList.remove('open'); }
 async function salvarAluno(){ const nome=$('#alunoNome').value.trim(), turma=$('#alunoTurma').value.trim(); if(!nome||!turma){toast('Informe nome e turma.','error');return;} const id=slug(`${turma}-${nome}`); await setDoc(doc(db,colecoes.alunos,id),{nome,turma,emailResponsavel1:$('#alunoResp1').value.trim(),emailResponsavel2:$('#alunoResp2').value.trim(),telefoneResponsavel:$('#alunoTel').value.trim(),ativo:true,updatedAt:serverTimestamp()},{merge:true}); toast('Aluno salvo.'); ['#alunoNome','#alunoTurma','#alunoResp1','#alunoResp2','#alunoTel'].forEach(s=>$(s).value=''); await carregarAlunos(); }

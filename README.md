@@ -112,3 +112,12 @@ Foi adicionada a imagem:
 `assets/logo-sesi-dom-bosco.png`
 
 O sistema envia a variável `{{logo_url}}` automaticamente com o caminho público da logo no GitHub Pages.
+
+
+## Alterações desta versão
+- Identidade visual atualizada com logo SESI e imagem da unidade em `assets/`.
+- Histórico mostra o nome do usuário e o cargo, por exemplo: `Alan Rodrigues (admin)`.
+- E-mail aos responsáveis não exibe o e-mail pessoal do usuário; usa `Registrado pela equipe disciplinar do SESI Dom Bosco.`
+- Adicionada opção de apagar registro nos detalhes do histórico para usuários admin.
+- Envio para pedagogia: configure o e-mail em Admin > E-mail da pedagogia/cópia e, no EmailJS, coloque o campo Cc como `{{cc_email}}`.
+- O template HTML atualizado está em `emailjs-template-registro-diario.html`.
