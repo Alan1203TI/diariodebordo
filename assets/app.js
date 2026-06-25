@@ -195,7 +195,7 @@ async function tentarEmailJs(registro,id){
   try{
     emailjs.init({publicKey: emailJsConfig.publicKey});
     await emailjs.send(emailJsConfig.serviceId,emailJsConfig.templateId,{
-      to_email:registro.emailsResponsaveis.join(','), cc_email:registro.emailCopia||'', aluno:registro.ALUNO, aluno_nome:registro.ALUNO, turma:registro.TURMA, data:formatDateBR(registro.DATA), tipo_registro:registro['CONTROLE DIÁRIO']||'', ocorrencia:registro['DESCREVA O OCORRIDO']||registro['DESCREVA O RECONHECIMENTO']||'', providencia:registro['PROVIDÊNCIA']||'', disciplinario:registro.disciplinario, mensagem:registro.textoEmail
+      to_email:registro.emailsResponsaveis.join(','), cc_email:registro.emailCopia||'', aluno_nome:registro.ALUNO, turma:registro.TURMA, controle_diario:registro['CONTROLE DIÁRIO']||'', data_registro:formatDateBR(registro.DATA), detalhes_registro:registro['DESCREVA O OCORRIDO']||registro['DESCREVA O RECONHECIMENTO']||'', observacoes:registro['PROVIDÊNCIA']||'', registrado_por:registro.disciplinario, reply_to:(state.user?.email||'')
     });
     await setDoc(doc(db,colecoes.ocorrencias,id),{statusEmail:'enviado-emailjs',emailSentAt:serverTimestamp()},{merge:true});
   }catch(e){ console.error(e); await setDoc(doc(db,colecoes.ocorrencias,id),{statusEmail:'erro-emailjs',emailErro:String(e?.text||e?.message||e)},{merge:true}); }
