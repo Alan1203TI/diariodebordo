@@ -12,32 +12,76 @@ const $$ = s => [...document.querySelectorAll(s)];
 const state = { user:null, profile:{role:'disciplinario'}, alunos:[], historico:[], config:{}, registroAberto:null, alunoAberto:null, allUsuarios:[] };
 const colecoes = { alunos:'alunos', ocorrencias:'ocorrencias', usuarios:'usuarios', config:'configuracoes' };
 
-function norm(v=''){ return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim(); }
+function norm(v=''){
+  return String(v||'')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase()
+    .trim();
+}
+function normKey(v=''){
+  return norm(v)
+    .replace(/ãƒe/g,'mae')
+    .replace(/mãe/g,'mae')
+    .replace(/[^a-z0-9]/g,'');
+}
 function cleanEmail(v=''){
-  return String(v||'').trim().replace(/^mailto:/i,'').replace(/[;,]+$/,'');
+  return String(v||'')
+    .trim()
+    .replace(/^mailto:/i,'')
+    .replace(/[;,]+$/,'')
+    .replace(/\s+/g,'');
+}
+function extrairEmails(v=''){
+  const texto = String(v||'');
+  const matches = texto.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi) || [];
+  return matches.map(cleanEmail).filter(emailValido).filter((e,i,arr)=>arr.indexOf(e)===i);
 }
 function emailValido(v=''){
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail(v));
 }
 function getEmailByHeader(obj, nomes=[]){
   const entries = Object.entries(obj||{});
-  for(const nome of nomes){
-    const hit = entries.find(([k,v])=> norm(k)===norm(nome) && emailValido(v));
-    if(hit) return cleanEmail(hit[1]);
+  const targets = nomes.map(normKey);
+  for(const [k,v] of entries){
+    const nk = normKey(k);
+    if(targets.includes(nk)){
+      const emails = extrairEmails(v);
+      if(emails.length) return emails[0];
+    }
   }
-  for(const nome of nomes){
-    const n = norm(nome);
-    const hit = entries.find(([k,v])=> norm(k).includes(n) && emailValido(v));
-    if(hit) return cleanEmail(hit[1]);
+  for(const [k,v] of entries){
+    const nk = normKey(k);
+    if(targets.some(t=>nk.includes(t) || t.includes(nk))){
+      const emails = extrairEmails(v);
+      if(emails.length) return emails[0];
+    }
   }
   return '';
 }
+function getEmailsByHeader(obj, nomes=[]){
+  const entries = Object.entries(obj||{});
+  const targets = nomes.map(normKey);
+  const out=[];
+  for(const [k,v] of entries){
+    const nk = normKey(k);
+    const match = targets.includes(nk) || targets.some(t=>nk.includes(t) || t.includes(nk));
+    if(match){
+      extrairEmails(v).forEach(e=>{ if(!out.includes(e)) out.push(e); });
+    }
+  }
+  return out;
+}
 function detectEmailsAluno(obj={}){
-  const emailMae = getEmailByHeader(obj,['E-MAIL MÃE','EMAIL MÃE','E-MAIL MAE','EMAIL MAE','EMAIL_MAE','EMAIL DA MÃE','EMAIL DA MAE']);
-  const emailPai = getEmailByHeader(obj,['E-MAIL DO PAI','EMAIL DO PAI','E-MAIL PAI','EMAIL PAI','EMAIL_PAI','EMAIL DO RESPONSAVEL PAI']);
-  const emailResponsavelAcademico = getEmailByHeader(obj,['E-MAIL RESPONSAVEL ACADEMICO','EMAIL RESPONSAVEL ACADEMICO','E-MAIL RESPONSÁVEL ACADÊMICO','EMAIL RESPONSÁVEL ACADÊMICO','EMAIL RESPONSAVEL','E-MAIL RESPONSAVEL']);
+  const emailMae = getEmailByHeader(obj,['E-MAIL MÃE','EMAIL MÃE','E-MAIL MAE','EMAIL MAE','EMAIL_MAE','EMAIL DA MÃE','EMAIL DA MAE','EMAILMÃE','EMAILMAE']);
+  const emailPai = getEmailByHeader(obj,['E-MAIL DO PAI','EMAIL DO PAI','E-MAIL PAI','EMAIL PAI','EMAIL_PAI','EMAIL DO RESPONSAVEL PAI','EMAILPAI']);
+  const emailResponsavelAcademico = getEmailByHeader(obj,['E-MAIL RESPONSAVEL ACADEMICO','EMAIL RESPONSAVEL ACADEMICO','E-MAIL RESPONSÁVEL ACADÊMICO','EMAIL RESPONSÁVEL ACADÊMICO','EMAIL RESPONSAVEL','E-MAIL RESPONSAVEL','EMAILRESPONSAVELACADEMICO']);
   const emailAluno = getEmailByHeader(obj,['E-MAIL','EMAIL','EMAIL ALUNO','E-MAIL ALUNO','EMAIL DO ALUNO','E-MAIL DO ALUNO']);
-  const emailsResponsaveis = [emailMae, emailPai, emailResponsavelAcademico].filter(Boolean).filter((e,i,arr)=>arr.indexOf(e)===i);
+  const emailsResponsaveis = [
+    ...getEmailsByHeader(obj,['E-MAIL MÃE','EMAIL MÃE','E-MAIL MAE','EMAIL MAE','EMAIL DA MÃE','EMAIL DA MAE','EMAILMAE']),
+    ...getEmailsByHeader(obj,['E-MAIL DO PAI','EMAIL DO PAI','E-MAIL PAI','EMAIL PAI','EMAILPAI']),
+    ...getEmailsByHeader(obj,['E-MAIL RESPONSAVEL ACADEMICO','EMAIL RESPONSAVEL ACADEMICO','E-MAIL RESPONSÁVEL ACADÊMICO','EMAIL RESPONSÁVEL ACADÊMICO','EMAIL RESPONSAVEL','E-MAIL RESPONSAVEL','EMAILRESPONSAVELACADEMICO'])
+  ].filter(Boolean).filter((e,i,arr)=>arr.indexOf(e)===i);
   return { emailAluno, emailMae, emailPai, emailResponsavelAcademico, emailsResponsaveis };
 }
 function detectMaeEmail(obj){
@@ -205,17 +249,31 @@ function emailsDoAluno(aluno){
   const dados = aluno?.dadosCompletos || {};
   const fromAluno = detectEmailsAluno(aluno||{});
   const fromDados = detectEmailsAluno(dados);
-  return [
+  const emails = [
     ...(Array.isArray(aluno?.emailsResponsaveis) ? aluno.emailsResponsaveis : []),
+    ...(Array.isArray(dados?.emailsResponsaveis) ? dados.emailsResponsaveis : []),
+    ...fromAluno.emailsResponsaveis,
+    ...fromDados.emailsResponsaveis,
     fromAluno.emailMae, fromAluno.emailPai, fromAluno.emailResponsavelAcademico,
     fromDados.emailMae, fromDados.emailPai, fromDados.emailResponsavelAcademico,
     aluno?.emailMae, aluno?.emailPai, aluno?.emailResponsavelAcademico,
-    aluno?.emailResponsavel1, aluno?.emailResponsavel2, aluno?.emailResponsavel3
+    dados?.emailMae, dados?.emailPai, dados?.emailResponsavelAcademico,
+    aluno?.emailResponsavel1, aluno?.emailResponsavel2, aluno?.emailResponsavel3,
+    dados?.emailResponsavel1, dados?.emailResponsavel2, dados?.emailResponsavel3
   ]
+    .flatMap(v=>extrairEmails(v))
     .filter(Boolean)
-    .map(cleanEmail)
-    .filter(emailValido)
     .filter((e,i,arr)=>arr.indexOf(e)===i);
+
+  // Fallback: se não encontrar responsáveis, usa qualquer e-mail não institucional de aluno encontrado na ficha.
+  if(!emails.length){
+    const todos = [...Object.values(aluno||{}), ...Object.values(dados||{})]
+      .flatMap(v=>extrairEmails(v))
+      .filter(e=>!/@alunosesimg\.com\.br$/i.test(e))
+      .filter((e,i,arr)=>arr.indexOf(e)===i);
+    return todos;
+  }
+  return emails;
 }
 function alunoSelecionado(){ return state.alunos.find(a=>a.id===$('#alunoSelect').value); }
 function labelRole(){ return state.profile.role || state.profile.perfil || 'disciplinario'; }
