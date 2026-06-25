@@ -21,3 +21,5 @@
 .hero-card p{margin:0;font-weight:700;color:#e0f2fe;}
 .actions-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;}
 @media(max-width:700px){.hero-overlay{align-items:center;flex-direction:column;text-align:center}.hero-logo{max-width:220px}.logo img{width:96px}}
+
+.password-modal{position:fixed;inset:0;background:rgba(15,23,42,.78);z-index:200;display:grid;place-items:center;padding:20px}.password-card{width:min(460px,94vw);background:#fff;border-radius:22px;padding:28px;box-shadow:0 28px 80px rgba(0,0,0,.35);border-top:8px solid var(--brand)}.password-card h2{margin:0 0 8px;color:var(--brand)}.password-card p{margin:0 0 18px;color:var(--muted)}.password-card button{width:100%;margin-top:16px}.password-card small{display:block;margin-top:12px;color:var(--muted)}

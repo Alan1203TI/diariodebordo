@@ -156,9 +156,9 @@
           <form id="adminUserForm" class="grid four">
             <div><label>Nome</label><input id="adminUserNome" required placeholder="Nome do usuário" /></div>
             <div><label>E-mail</label><input id="adminUserEmail" type="email" required placeholder="email@escola.com" /></div>
-            <div><label>Senha</label><input id="adminUserSenha" type="password" required minlength="6" placeholder="mínimo 6 caracteres" /></div>
             <div><label>Perfil</label><select id="adminUserPerfil"><option value="disciplinario">Disciplinário</option><option value="professor">Professor</option><option value="pedagogia">Pedagogia</option><option value="admin">Administrador</option></select></div>
-            <div class="full"><button type="submit">Criar usuário</button></div>
+            <div><label>Senha padrão</label><input id="adminUserSenhaPadrao" type="password" required minlength="6" value="Sesi@123456" placeholder="senha padrão para todos" /></div>
+            <div class="full"><small class="muted">O usuário entrará com a senha padrão e será obrigado a criar uma nova senha no primeiro acesso.</small><br><button type="submit">Criar usuário</button></div>
           </form>
           <div id="listaUsuarios" class="list compact admin-users"></div>
         </div>
@@ -199,6 +199,22 @@
       <div id="modalBody"></div>
     </div>
   </div>
+
+  <div id="passwordModal" class="password-modal hidden">
+    <div class="password-card">
+      <h2>Troca de senha obrigatória</h2>
+      <p>Este é seu primeiro acesso. Para continuar, crie uma nova senha pessoal.</p>
+      <form id="changePasswordForm">
+        <label>Nova senha</label>
+        <input id="newPassword" type="password" minlength="6" required placeholder="mínimo 6 caracteres" autocomplete="new-password" />
+        <label>Confirmar nova senha</label>
+        <input id="confirmNewPassword" type="password" minlength="6" required placeholder="repita a nova senha" autocomplete="new-password" />
+        <button type="submit">Salvar nova senha</button>
+      </form>
+      <small>Após salvar, o acesso ao sistema será liberado.</small>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <script type="module" src="assets/app.js"></script>

@@ -1,7 +1,7 @@
 import { firebaseConfig } from '../firebase-config.js';
 const emailJsConfig = window.emailJsConfig || { enabled:false, publicKey:'', serviceId:'', templateId:'' };
 import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
 import { getFirestore, collection, doc, getDoc, setDoc, addDoc, getDocs, deleteDoc, query, where, orderBy, limit, serverTimestamp, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
 
 const app = initializeApp(firebaseConfig);
@@ -203,6 +203,43 @@ function usuarioDisplay(){
   const nome = state.profile?.nome || state.profile?.name || state.user?.displayName || state.user?.email || 'Usuário';
   return `${nome} (${labelRole()})`;
 }
+
+function precisaTrocarSenha(){
+  return state.profile?.trocarSenhaObrigatoria === true || state.profile?.mustChangePassword === true || state.profile?.senhaInicial === true;
+}
+function controlarModalSenha(){
+  const modal = $('#passwordModal');
+  if(!modal) return;
+  modal.classList.toggle('hidden', !precisaTrocarSenha());
+}
+async function trocarSenhaInicial(ev){
+  ev.preventDefault();
+  const nova = $('#newPassword')?.value || '';
+  const confirma = $('#confirmNewPassword')?.value || '';
+  if(nova.length < 6){ toast('A nova senha precisa ter pelo menos 6 caracteres.','error'); return; }
+  if(nova !== confirma){ toast('As senhas não conferem.','error'); return; }
+  try{
+    await updatePassword(auth.currentUser, nova);
+    await setDoc(doc(db,colecoes.usuarios,state.user.uid),{
+      trocarSenhaObrigatoria:false,
+      mustChangePassword:false,
+      senhaInicial:false,
+      senhaAlteradaEm:serverTimestamp(),
+      updatedAt:serverTimestamp()
+    },{merge:true});
+    state.profile.trocarSenhaObrigatoria=false;
+    state.profile.mustChangePassword=false;
+    state.profile.senhaInicial=false;
+    controlarModalSenha();
+    toast('Senha alterada com sucesso.');
+    $('#changePasswordForm')?.reset();
+  }catch(err){
+    const msg = err?.code === 'auth/requires-recent-login'
+      ? 'Por segurança, saia e entre novamente com a senha padrão para trocar a senha.'
+      : (err?.message || err);
+    toast('Erro ao trocar senha: '+msg,'error');
+  }
+}
 function registroAutorDisplay(r={}){
   return r.registradoPorDisplay || (r.registradoPorNome ? `${r.registradoPorNome} (${r.registradoPorCargo || 'disciplinario'})` : (r.disciplinario || r.Email || 'Não informado'));
 }
@@ -258,6 +295,7 @@ async function carregarPerfil(){
   if(s.exists()) state.profile=s.data(); else { state.profile={nome:state.user.email, email:state.user.email, role:'disciplinario', ativo:true}; await setDoc(ref,{...state.profile,createdAt:serverTimestamp()},{merge:true}); }
   if(state.profile.ativo===false){ toast('Usuário desativado. Procure o administrador.','error'); await signOut(auth); return; }
   $('#userLabel').textContent=usuarioDisplay();
+  controlarModalSenha();
   $$('.admin-only').forEach(e=>e.style.display=labelRole()==='admin'?'block':'none');
 }
 
@@ -481,24 +519,25 @@ async function carregarUsuarios(){
   const snap = await getDocs(collection(db,colecoes.usuarios));
   state.allUsuarios = snap.docs.map(d=>({id:d.id,...d.data()}));
   const box = $('#listaUsuarios');
-  if(box) box.innerHTML = state.allUsuarios.map(u=>`<div class="item"><h4>${escapeHtml(u.nome||u.email||'Usuário')}</h4><p>${escapeHtml(u.email||'')} • ${escapeHtml(u.role||u.perfil||'disciplinario')} • ${u.ativo===false?'inativo':'ativo'}</p></div>`).join('') || '<p class="muted">Nenhum usuário listado.</p>';
+  if(box) box.innerHTML = state.allUsuarios.map(u=>`<div class="item"><h4>${escapeHtml(u.nome||u.email||'Usuário')}</h4><p>${escapeHtml(u.email||'')} • ${escapeHtml(u.role||u.perfil||'disciplinario')} • ${u.ativo===false?'inativo':'ativo'}${(u.trocarSenhaObrigatoria||u.senhaInicial)?' • troca de senha pendente':''}</p></div>`).join('') || '<p class="muted">Nenhum usuário listado.</p>';
 }
 async function criarUsuarioAdmin(ev){
   ev.preventDefault();
   if(labelRole()!=='admin'){ toast('Apenas administradores podem criar usuários.','error'); return; }
   const nome=$('#adminUserNome').value.trim();
   const email=$('#adminUserEmail').value.trim();
-  const senha=$('#adminUserSenha').value;
+  const senha=$('#adminUserSenhaPadrao').value;
   const role=$('#adminUserPerfil').value;
-  if(!nome || !email || senha.length<6){ toast('Informe nome, e-mail e senha com pelo menos 6 caracteres.','error'); return; }
+  if(!nome || !email || senha.length<6){ toast('Informe nome, e-mail e senha padrão com pelo menos 6 caracteres.','error'); return; }
   let secondaryApp=null;
   try{
     secondaryApp = initializeApp(firebaseConfig, 'secondary-'+Date.now());
     const secondaryAuth = getAuth(secondaryApp);
     const cred = await createUserWithEmailAndPassword(secondaryAuth,email,senha);
-    await setDoc(doc(db,colecoes.usuarios,cred.user.uid),{nome,email,role,ativo:true,createdAt:serverTimestamp(),criadoPor:state.user.email},{merge:true});
-    toast('Usuário criado com sucesso.');
+    await setDoc(doc(db,colecoes.usuarios,cred.user.uid),{nome,email,role,ativo:true,trocarSenhaObrigatoria:true,senhaInicial:true,createdAt:serverTimestamp(),criadoPor:state.user.email},{merge:true});
+    toast('Usuário criado com sucesso. Ele deverá trocar a senha no primeiro acesso.');
     $('#adminUserForm').reset();
+    if($('#adminUserSenhaPadrao')) $('#adminUserSenhaPadrao').value='Sesi@123456';
     await carregarUsuarios();
   }catch(err){
     toast('Erro ao criar usuário: '+(err?.message||err),'error');
@@ -508,6 +547,7 @@ async function criarUsuarioAdmin(ev){
 }
 
 $('#loginForm').addEventListener('submit',async e=>{ e.preventDefault(); try{ await signInWithEmailAndPassword(auth,$('#loginEmail').value,$('#loginPassword').value); }catch(err){toast('Erro no login: '+err.message,'error')} });
+if($('#changePasswordForm')) $('#changePasswordForm').addEventListener('submit',trocarSenhaInicial);
 $('#logoutBtn').onclick=()=>signOut(auth); $('#menuBtn').onclick=()=>$('.sidebar').classList.toggle('open'); $$('.nav').forEach(b=>b.onclick=()=>trocarPagina(b.dataset.page));
 $('#turmaSelect').onchange=preencherAlunos; $('#alunoSelect').onchange=atualizarResponsaveis; if($('#profTurmaSelect')) $('#profTurmaSelect').onchange=preencherAlunosProfessor; if($('#profAlunoSelect')) $('#profAlunoSelect').onchange=atualizarAlunoProfessor; $('#registroForm').onsubmit=salvarRegistro; if($('#professorForm')) $('#professorForm').onsubmit=salvarRegistroProfessor; $('#limparForm').onclick=()=>{ $('#registroForm').reset(); renderControleSection(); }; if($('#limparProfessorForm')) $('#limparProfessorForm').onclick=()=>{ $('#professorForm').reset(); const pn=$('#professorNome'); if(pn) pn.value=state.profile.nome || state.user.email; }; $('#aplicarFiltros').onclick=renderHistorico; $('#exportarCsv').onclick=exportarCsv; $('#salvarAluno').onclick=salvarAluno; $('#importarAlunos').onclick=importarAlunos; $('#importarHistorico').onclick=importarHistorico; $('#importarAlunosArquivo').onclick=importarAlunosArquivo; $('#importarHistoricoArquivo').onclick=importarHistoricoArquivo; $('#adminUserForm').addEventListener('submit',criarUsuarioAdmin); $('#salvarConfig').onclick=salvarConfig; $('#limparBanco').onclick=limparBancoDados; $('#modalClose').onclick=fecharModal; $('#modalBackdrop').onclick=fecharModal;
 onAuthStateChanged(auth,async user=>{ state.user=user; $('#loginScreen').classList.toggle('hidden',!!user); $('#app').classList.toggle('hidden',!user); if(user){ await init(); await carregarPerfil(); applyRolePermissions(); await carregarConfig(); await carregarAlunos(); await atualizarHistorico(); trocarPagina(canAccessPage('novo')?'novo':(canAccessPage('professor')?'professor':'historico')); } });
