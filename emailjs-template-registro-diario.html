@@ -1,0 +1,93 @@
+<!--
+TEMPLATE EMAILJS - REGISTRO DIÁRIO SESI DOM BOSCO
+
+No EmailJS:
+1. Abra o template template_yg9cov8.
+2. Clique em "Editar conteúdo".
+3. Selecione/cole este HTML no conteúdo do e-mail.
+4. Mantenha:
+   Para enviar um e-mail: {{to_email}}
+   Responder a: {{reply_to}}
+   De Nome: {{name}}
+   Assunto: Registro Diário - {{aluno_nome}} - {{controle_diario}}
+-->
+
+<div style="margin:0;padding:0;background:#f3f7fb;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
+  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#f3f7fb;padding:24px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" cellpadding="0" cellspacing="0" width="640" style="width:640px;max-width:96%;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #dbeafe;box-shadow:0 8px 24px rgba(15,23,42,.08);">
+          <tr>
+            <td style="background:#004a98;padding:22px 28px;">
+              <img src="{{logo_url}}" alt="SESI Dom Bosco" style="display:block;max-width:260px;width:100%;height:auto;">
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:28px 32px 10px 32px;">
+              <h1 style="margin:0 0 8px 0;color:#003f88;font-size:26px;line-height:1.2;">Registro Diário</h1>
+              <p style="margin:0;color:#475569;font-size:15px;line-height:1.5;">
+                Prezada família,
+              </p>
+              <p style="margin:14px 0 0 0;color:#0f172a;font-size:15px;line-height:1.6;">
+                Informamos que foi realizado um registro no sistema de Registro Diário do aluno(a)
+                <strong>{{aluno_nome}}</strong>, da turma <strong>{{turma}}</strong>.
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:16px 32px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;">
+                <tr>
+                  <td style="padding:16px 18px;font-size:15px;line-height:1.6;">
+                    <p style="margin:0 0 8px 0;"><strong style="color:#003f88;">Tipo de registro:</strong> {{controle_diario}}</p>
+                    <p style="margin:0 0 8px 0;"><strong style="color:#003f88;">Data do registro:</strong> {{data_registro}}</p>
+                    <p style="margin:0;"><strong style="color:#003f88;">Registrado por:</strong> {{registrado_por}}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:4px 32px 12px 32px;">
+              <h2 style="margin:12px 0 10px 0;color:#003f88;font-size:18px;border-bottom:1px solid #bfdbfe;padding-bottom:8px;">Detalhes do registro</h2>
+              <div style="font-size:15px;line-height:1.6;color:#0f172a;">
+                {{{detalhes_html}}}
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:4px 32px 12px 32px;">
+              <h2 style="margin:12px 0 10px 0;color:#003f88;font-size:18px;border-bottom:1px solid #bfdbfe;padding-bottom:8px;">Providências / observações</h2>
+              <p style="margin:0;font-size:15px;line-height:1.6;color:#0f172a;">{{observacoes}}</p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:16px 32px;">
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;color:#334155;font-size:14px;line-height:1.5;">
+                Caso precisem de mais informações, entrem em contato com a escola.
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:8px 32px 30px 32px;font-size:15px;line-height:1.5;color:#0f172a;">
+              Atenciosamente,<br>
+              <strong>Equipe disciplinar - SESI Dom Bosco</strong>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="background:#003f88;color:#ffffff;padding:16px 32px;font-size:13px;line-height:1.5;">
+              SESI Dom Bosco • Registro Diário de Alunos
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</div>

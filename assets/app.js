@@ -160,9 +160,24 @@ async function carregarPerfil(){
   $$('.admin-only').forEach(e=>e.style.display=labelRole()==='admin'?'block':'none');
 }
 function resumoCampos(registro){
-  const ignorar=['id','TURMA','ALUNO','DATA','Email','disciplinario','alunoId','emailsResponsaveis','emailCopia','statusEmail','createdAt','createdAtLocal','updatedAt','emailSentAt','emailErro','alunoDados'];
+  const ignorar=['id','TURMA','ALUNO','DATA','Email','disciplinario','alunoId','emailsResponsaveis','emailCopia','statusEmail','createdAt','createdAtLocal','updatedAt','emailSentAt','emailErro','emailDestino','textoEmail','alunoDados'];
   return Object.entries(registro).filter(([k,v])=>!ignorar.includes(k)&&v!==undefined&&v!==null&&String(v).trim()!=='').map(([k,v])=>`${k}: ${v}`).join('\n');
 }
+
+function detalhesRegistroLista(registro){
+  const texto = resumoCampos(registro);
+  return texto ? texto.split('\n').filter(Boolean) : [];
+}
+function detalhesRegistroHtml(registro){
+  const itens = detalhesRegistroLista(registro);
+  if(!itens.length) return '<p style="margin:0;color:#334155;">Sem detalhes adicionais.</p>';
+  return '<ul style="margin:0;padding-left:20px;color:#0f172a;line-height:1.6;">' + itens.map(i=>`<li>${escapeHtml(i)}</li>`).join('') + '</ul>';
+}
+function logoUrlEmail(){
+  try { return new URL('assets/logo-sesi-dom-bosco.png', window.location.href).href; }
+  catch(e){ return ''; }
+}
+
 function textoEmailAutomatico(registro){
   const tipo=registro['CONTROLE DIÁRIO']||'Registro diário';
   const aluno=registro.ALUNO||'';
@@ -200,13 +215,15 @@ async function tentarEmailJs(registro,id){
     await setDoc(doc(db,colecoes.ocorrencias,id),{statusEmail:'sem-email-mae',emailErro:'Aluno sem E-MAIL MÃE válido.'},{merge:true});
     return;
   }
-  const detalhes = resumoCampos(registro) || registro.textoEmail || 'Registro diário sem detalhes adicionais.';
+  const detalhes = resumoCampos(registro) || 'Registro diário sem detalhes adicionais.';
   const observacoes = registro['PROVIDÊNCIA'] || registro['CONTATO COM RESPONSÁVEIS'] || registro['COMUNICADO À FAMÍLIA'] || registro['SANÇÕES'] || '';
   const params={
     // Variáveis usadas no template do EmailJS
     to_email: destinatarios[0],
     reply_to: state.user?.email || 'naoresponder@sesi.local',
     name: 'SESI Dom Bosco',
+    logo_url: logoUrlEmail(),
+    detalhes_html: detalhesRegistroHtml(registro),
     aluno_nome: registro.ALUNO || '',
     turma: registro.TURMA || '',
     controle_diario: registro['CONTROLE DIÁRIO'] || 'Registro diário',

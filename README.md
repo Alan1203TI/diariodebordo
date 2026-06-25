@@ -85,3 +85,30 @@ Depois do cadastro, o sistema cria automaticamente:
 
 ## Correção de importação
 Nesta versão o app.js importa apenas firebaseConfig. O EmailJS é opcional via window.emailJsConfig, evitando erro de export não encontrado.
+
+
+## EmailJS - template bonito sem duplicidade
+
+Nesta versão o envio do EmailJS foi ajustado para não duplicar o conteúdo.  
+A variável `detalhes_registro` agora não inclui mais o `textoEmail` inteiro, e foi adicionada a variável `detalhes_html` para usar em um layout mais bonito.
+
+### Configuração do template no EmailJS
+
+No EmailJS, abra o template atual e mantenha:
+
+- **Para enviar um e-mail:** `{{to_email}}`
+- **Responder a:** `{{reply_to}}`
+- **De Nome:** `{{name}}`
+- **Assunto:** `Registro Diário - {{aluno_nome}} - {{controle_diario}}`
+
+Depois clique em **Editar conteúdo** e cole o conteúdo do arquivo:
+
+`emailjs-template-registro-diario.html`
+
+### Logo
+
+Foi adicionada a imagem:
+
+`assets/logo-sesi-dom-bosco.png`
+
+O sistema envia a variável `{{logo_url}}` automaticamente com o caminho público da logo no GitHub Pages.
