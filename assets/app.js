@@ -168,6 +168,36 @@ function labelRole(){ return state.profile.role || state.profile.perfil || 'disc
 function isAdmin(){ return labelRole()==='admin'; }
 function isProfessor(){ return labelRole()==='professor'; }
 function isDisciplinario(){ return labelRole()==='disciplinario'; }
+
+function isPedagogia(){ return labelRole()==='pedagogia'; }
+function canAccessPage(page){
+  const role = labelRole();
+  if(role==='admin') return true;
+  if(role==='pedagogia') return ['novo','professor','historico','alunos'].includes(page);
+  if(role==='disciplinario') return ['novo','historico'].includes(page);
+  if(role==='professor') return ['professor','historico'].includes(page);
+  return page==='historico';
+}
+function canEdit(){
+  return ['admin','disciplinario','professor'].includes(labelRole());
+}
+function applyRolePermissions(){
+  const role = labelRole();
+  document.body.dataset.role = role;
+  $$('.nav').forEach(btn=>{
+    const page = btn.dataset.page;
+    btn.classList.remove('hidden');
+    if(page && !canAccessPage(page)) btn.classList.add('hidden');
+  });
+  // disable edit areas for pedagogia
+  const novoForm = $('#registroForm');
+  const profForm = $('#professorForm');
+  if(role==='pedagogia'){
+    if(novoForm){ novoForm.querySelectorAll('input,select,textarea,button').forEach(el=>el.disabled=true); }
+    if(profForm){ profForm.querySelectorAll('input,select,textarea,button').forEach(el=>el.disabled=true); }
+  }
+}
+
 function perfilLabel(role=labelRole()){ return ({admin:'admin', disciplinario:'disciplinário', professor:'professor', pedagogia:'pedagogia'}[role] || role); }
 function usuarioDisplay(){
   const nome = state.profile?.nome || state.profile?.name || state.user?.displayName || state.user?.email || 'Usuário';
@@ -278,7 +308,7 @@ function textoEmailAutomatico(registro){
   linhas.push('',`Data: ${data}`,`Tipo de registro: ${tipo}`,'','Detalhes do registro:',resumoCampos(registro)||'Sem detalhes adicionais.','','Atenciosamente,',`Equipe disciplinar - ${unidade}`);
   return linhas.join('\n');
 }
-async function salvarRegistro(ev){ ev.preventDefault(); const aluno=alunoSelecionado(); if(!aluno){ toast('Selecione um aluno.','error'); return; }
+async function salvarRegistro(ev){ if(!['admin','disciplinario'].includes(labelRole())){ ev?.preventDefault?.(); toast('Você não tem permissão para criar registro disciplinar.','error'); return; } ev.preventDefault(); const aluno=alunoSelecionado(); if(!aluno){ toast('Selecione um aluno.','error'); return; }
   const dados={}; new FormData($('#registroForm')).forEach((v,k)=>dados[k]=v);
   const emails=emailsDoAluno(aluno);
   const registro={...dados,TURMA:aluno.turma,ALUNO:aluno.nome,DATA:$('#dataRegistro').value,Email:state.user.email,disciplinario:state.user.email,registradoPorNome:state.profile?.nome||state.user.email,registradoPorCargo:labelRole(),registradoPorDisplay:usuarioDisplay(),alunoId:aluno.id,alunoDados:aluno.dadosCompletos||aluno,emailsResponsaveis:emails,emailCopia:state.config.emailCopia||'',statusEmail:emails.length?'pendente':'sem-email',createdAt:serverTimestamp(),createdAtLocal:new Date().toISOString()};
@@ -332,7 +362,7 @@ async function tentarEmailJs(registro,id){
   }
 }
 
-async function salvarRegistroProfessor(ev){
+async function salvarRegistroProfessor(ev){ if(!['admin','professor'].includes(labelRole())){ ev?.preventDefault?.(); toast('Você não tem permissão para criar registro do professor.','error'); return; }
   ev.preventDefault();
   const aluno=alunoSelecionadoProfessor();
   if(!aluno){ toast('Selecione um aluno.','error'); return; }
@@ -436,7 +466,16 @@ async function limparBancoDados(){
   state.alunos=[]; state.historico=[]; renderAlunos(); renderHistorico();
 }
 function exportarCsv(){ const rows=state.historico; if(!rows.length){toast('Nada para exportar.','error');return;} const cols=[...new Set(rows.flatMap(r=>Object.keys(r)))]; const csv=[cols.join(';'),...rows.map(r=>cols.map(c=>`"${String(r[c]??'').replace(/"/g,'""')}"`).join(';'))].join('\n'); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download='registro-diario-ocorrencias.csv'; a.click(); }
-function trocarPagina(p){ $$('.nav').forEach(b=>b.classList.toggle('active',b.dataset.page===p)); $$('.page').forEach(s=>s.classList.toggle('active',s.id===`page-${p}`)); $('#pageTitle').textContent={novo:'Novo registro',professor:'Registro professor',historico:'Histórico',alunos:'Alunos',admin:'Admin'}[p]||'Registro'; $('.sidebar').classList.remove('open'); if(p==='historico') atualizarHistorico(); if(p==='alunos') renderAlunos(); if(p==='admin') carregarUsuarios(); }
+function trocarPagina(p){
+  if(!canAccessPage(p)){ toast('Você não tem permissão para acessar esta área.','error'); p = canAccessPage('historico') ? 'historico' : (canAccessPage('novo')?'novo':'professor'); }
+  $$('.nav').forEach(b=>b.classList.toggle('active',b.dataset.page===p));
+  $$('.page').forEach(s=>s.classList.toggle('active',s.id===`page-${p}`));
+  $('#pageTitle').textContent={novo:'Novo registro',professor:'Registro professor',historico:'Histórico',alunos:'Alunos',admin:'Admin'}[p]||'Registro';
+  $('.sidebar').classList.remove('open');
+  if(p==='historico') atualizarHistorico();
+  if(p==='alunos') renderAlunos();
+  if(p==='admin') carregarUsuarios();
+}
 async function carregarUsuarios(){
   if(labelRole()!=='admin') return;
   const snap = await getDocs(collection(db,colecoes.usuarios));
@@ -471,4 +510,4 @@ async function criarUsuarioAdmin(ev){
 $('#loginForm').addEventListener('submit',async e=>{ e.preventDefault(); try{ await signInWithEmailAndPassword(auth,$('#loginEmail').value,$('#loginPassword').value); }catch(err){toast('Erro no login: '+err.message,'error')} });
 $('#logoutBtn').onclick=()=>signOut(auth); $('#menuBtn').onclick=()=>$('.sidebar').classList.toggle('open'); $$('.nav').forEach(b=>b.onclick=()=>trocarPagina(b.dataset.page));
 $('#turmaSelect').onchange=preencherAlunos; $('#alunoSelect').onchange=atualizarResponsaveis; if($('#profTurmaSelect')) $('#profTurmaSelect').onchange=preencherAlunosProfessor; if($('#profAlunoSelect')) $('#profAlunoSelect').onchange=atualizarAlunoProfessor; $('#registroForm').onsubmit=salvarRegistro; if($('#professorForm')) $('#professorForm').onsubmit=salvarRegistroProfessor; $('#limparForm').onclick=()=>{ $('#registroForm').reset(); renderControleSection(); }; if($('#limparProfessorForm')) $('#limparProfessorForm').onclick=()=>{ $('#professorForm').reset(); const pn=$('#professorNome'); if(pn) pn.value=state.profile.nome || state.user.email; }; $('#aplicarFiltros').onclick=renderHistorico; $('#exportarCsv').onclick=exportarCsv; $('#salvarAluno').onclick=salvarAluno; $('#importarAlunos').onclick=importarAlunos; $('#importarHistorico').onclick=importarHistorico; $('#importarAlunosArquivo').onclick=importarAlunosArquivo; $('#importarHistoricoArquivo').onclick=importarHistoricoArquivo; $('#adminUserForm').addEventListener('submit',criarUsuarioAdmin); $('#salvarConfig').onclick=salvarConfig; $('#limparBanco').onclick=limparBancoDados; $('#modalClose').onclick=fecharModal; $('#modalBackdrop').onclick=fecharModal;
-onAuthStateChanged(auth,async user=>{ state.user=user; $('#loginScreen').classList.toggle('hidden',!!user); $('#app').classList.toggle('hidden',!user); if(user){ await init(); await carregarPerfil(); await carregarConfig(); await carregarAlunos(); await atualizarHistorico(); } });
+onAuthStateChanged(auth,async user=>{ state.user=user; $('#loginScreen').classList.toggle('hidden',!!user); $('#app').classList.toggle('hidden',!user); if(user){ await init(); await carregarPerfil(); applyRolePermissions(); await carregarConfig(); await carregarAlunos(); await atualizarHistorico(); trocarPagina(canAccessPage('novo')?'novo':(canAccessPage('professor')?'professor':'historico')); } });
