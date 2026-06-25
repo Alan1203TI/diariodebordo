@@ -13,12 +13,35 @@ const state = { user:null, profile:{role:'disciplinario'}, alunos:[], historico:
 const colecoes = { alunos:'alunos', ocorrencias:'ocorrencias', usuarios:'usuarios', config:'configuracoes' };
 
 function norm(v=''){ return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim(); }
-function detectMaeEmail(obj){
+function cleanEmail(v=''){
+  return String(v||'').trim().replace(/^mailto:/i,'').replace(/[;,]+$/,'');
+}
+function emailValido(v=''){
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail(v));
+}
+function getEmailByHeader(obj, nomes=[]){
   const entries = Object.entries(obj||{});
-  const preferred = entries.find(([k,v])=> norm(k).includes('mae') && norm(k).includes('email') && v);
-  if(preferred) return String(preferred[1]).trim();
-  const anyEmail = entries.find(([k,v])=> norm(k).includes('email') && v);
-  return anyEmail ? String(anyEmail[1]).trim() : '';
+  for(const nome of nomes){
+    const hit = entries.find(([k,v])=> norm(k)===norm(nome) && emailValido(v));
+    if(hit) return cleanEmail(hit[1]);
+  }
+  for(const nome of nomes){
+    const n = norm(nome);
+    const hit = entries.find(([k,v])=> norm(k).includes(n) && emailValido(v));
+    if(hit) return cleanEmail(hit[1]);
+  }
+  return '';
+}
+function detectEmailsAluno(obj={}){
+  const emailMae = getEmailByHeader(obj,['E-MAIL MÃE','EMAIL MÃE','E-MAIL MAE','EMAIL MAE','EMAIL_MAE','EMAIL DA MÃE','EMAIL DA MAE']);
+  const emailPai = getEmailByHeader(obj,['E-MAIL DO PAI','EMAIL DO PAI','E-MAIL PAI','EMAIL PAI','EMAIL_PAI','EMAIL DO RESPONSAVEL PAI']);
+  const emailResponsavelAcademico = getEmailByHeader(obj,['E-MAIL RESPONSAVEL ACADEMICO','EMAIL RESPONSAVEL ACADEMICO','E-MAIL RESPONSÁVEL ACADÊMICO','EMAIL RESPONSÁVEL ACADÊMICO','EMAIL RESPONSAVEL','E-MAIL RESPONSAVEL']);
+  const emailAluno = getEmailByHeader(obj,['E-MAIL','EMAIL','EMAIL ALUNO','E-MAIL ALUNO','EMAIL DO ALUNO','E-MAIL DO ALUNO']);
+  const emailsResponsaveis = [emailMae, emailPai, emailResponsavelAcademico].filter(Boolean).filter((e,i,arr)=>arr.indexOf(e)===i);
+  return { emailAluno, emailMae, emailPai, emailResponsavelAcademico, emailsResponsaveis };
+}
+function detectMaeEmail(obj){
+  return detectEmailsAluno(obj).emailMae || '';
 }
 function getField(obj, nomes=[]){
   const entries = Object.entries(obj||{});
@@ -47,9 +70,31 @@ function mapAlunoImportado(row={}){
   const nome = getField(a,['ALUNO NOME','NOME ALUNO','NOME DO ALUNO','ALUNO','NOME','Nome do aluno']) || a.nome || '';
   const turma = getField(a,['CODIGO TURMA','CÓDIGO TURMA','TURMA','COD TURMA','Código Turma']) || a.turma || '';
   const ra = getField(a,['RA ALUNO','RA','MATRICULA','MATRÍCULA','ID ALUNO']);
-  const maeEmail = detectMaeEmail(a);
+  const nomePai = getField(a,['NOME DO PAI','PAI','NOME PAI']);
+  const nomeMae = getField(a,['NOME MÃE','NOME MAE','MÃE','MAE','NOME DA MÃE','NOME DA MAE']);
+  const nomeResponsavelAcademico = getField(a,['NOME RESPONSAVEL ACADEMICO','NOME RESPONSÁVEL ACADÊMICO','RESPONSAVEL ACADEMICO','RESPONSÁVEL ACADÊMICO']);
+  const emails = detectEmailsAluno(a);
   const id = slug(`${turma}-${ra || nome}`);
-  return { ...a, id, nome, turma, raAluno: ra, emailMae: maeEmail, emailResponsavel1: maeEmail, dadosCompletos: a, ativo:true };
+  return {
+    ...a,
+    id,
+    nome,
+    turma,
+    raAluno: ra,
+    nomePai,
+    nomeMae,
+    nomeResponsavelAcademico,
+    emailAluno: emails.emailAluno,
+    emailMae: emails.emailMae,
+    emailPai: emails.emailPai,
+    emailResponsavelAcademico: emails.emailResponsavelAcademico,
+    emailsResponsaveis: emails.emailsResponsaveis,
+    emailResponsavel1: emails.emailMae || emails.emailResponsavelAcademico || emails.emailPai || '',
+    emailResponsavel2: emails.emailPai || '',
+    emailResponsavel3: emails.emailResponsavelAcademico || '',
+    dadosCompletos: a,
+    ativo:true
+  };
 }
 function mapHistoricoImportado(row={}){
   const r = normalizarLinhaPlanilha(row);
@@ -158,9 +203,18 @@ function escapeHtml(v=''){return String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;
 function formatDateBR(v){ if(!v) return ''; const [y,m,d]=String(v).slice(0,10).split('-'); return d&&m&&y?`${d}/${m}/${y}`:v; }
 function emailsDoAluno(aluno){
   const dados = aluno?.dadosCompletos || {};
-  const mae = detectMaeEmail(aluno) || detectMaeEmail(dados);
-  return [mae, aluno?.emailMae, aluno?.emailResponsavel1, aluno?.emailResponsavel2, aluno?.emailResponsavel3]
-    .filter(Boolean).map(e=>String(e).trim()).filter(e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))
+  const fromAluno = detectEmailsAluno(aluno||{});
+  const fromDados = detectEmailsAluno(dados);
+  return [
+    ...(Array.isArray(aluno?.emailsResponsaveis) ? aluno.emailsResponsaveis : []),
+    fromAluno.emailMae, fromAluno.emailPai, fromAluno.emailResponsavelAcademico,
+    fromDados.emailMae, fromDados.emailPai, fromDados.emailResponsavelAcademico,
+    aluno?.emailMae, aluno?.emailPai, aluno?.emailResponsavelAcademico,
+    aluno?.emailResponsavel1, aluno?.emailResponsavel2, aluno?.emailResponsavel3
+  ]
+    .filter(Boolean)
+    .map(cleanEmail)
+    .filter(emailValido)
     .filter((e,i,arr)=>arr.indexOf(e)===i);
 }
 function alunoSelecionado(){ return state.alunos.find(a=>a.id===$('#alunoSelect').value); }
@@ -493,18 +547,13 @@ async function apagarRegistro(id){
 function abrirModal(){ $('#detailModal').classList.add('open'); }
 function fecharModal(){ $('#detailModal').classList.remove('open'); }
 async function salvarAluno(){ const nome=$('#alunoNome').value.trim(), turma=$('#alunoTurma').value.trim(); if(!nome||!turma){toast('Informe nome e turma.','error');return;} const id=slug(`${turma}-${nome}`); await setDoc(doc(db,colecoes.alunos,id),{nome,turma,emailResponsavel1:$('#alunoResp1').value.trim(),emailResponsavel2:$('#alunoResp2').value.trim(),telefoneResponsavel:$('#alunoTel').value.trim(),ativo:true,updatedAt:serverTimestamp()},{merge:true}); toast('Aluno salvo.'); ['#alunoNome','#alunoTurma','#alunoResp1','#alunoResp2','#alunoTel'].forEach(s=>$(s).value=''); await carregarAlunos(); }
-async function gravarListaImportada(colecao,lista,mapper,opts={}){
+async function gravarListaImportada(colecao,lista,mapper){
   let batch=writeBatch(db), count=0, lote=0;
-  const appendOnly = !!opts.appendOnly;
-  const importacaoId = opts.importacaoId || `imp-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
-  const arquivoImportado = opts.arquivoImportado || '';
   for(const item of lista){
     const mapped=mapper(item);
-    const ref=(appendOnly || !mapped.id)
-      ? doc(collection(db,colecao))
-      : doc(db,colecao,mapped.id||slug(JSON.stringify(mapped).slice(0,80)));
+    const ref=doc(db,colecao,mapped.id||slug(JSON.stringify(mapped).slice(0,80)));
     delete mapped.id;
-    batch.set(ref,{...mapped,importadoEm:serverTimestamp(), importacaoId, arquivoImportado},{merge:!appendOnly});
+    batch.set(ref,{...mapped,importadoEm:serverTimestamp()},{merge:true});
     count++; lote++;
     if(lote===400){ await batch.commit(); batch=writeBatch(db); lote=0; toast(`${count} importados...`); }
   }
@@ -523,7 +572,7 @@ async function importarAlunosArquivo(){
     if(labelRole()!=='admin'){ toast('Apenas administradores podem importar alunos.','error'); return; }
     const rows = await lerPlanilhaArquivo($('#arquivoAlunosSql'));
     if(!rows.length){ toast('A planilha não possui linhas para importar.','error'); return; }
-    await gravarListaImportada(colecoes.alunos, rows, mapAlunoImportado);
+    await gravarListaImportada(colecoes.alunos, rows, mapAlunoImportado,{arquivoImportado:$('#arquivoAlunosSql')?.files?.[0]?.name||''});
     await carregarAlunos();
   }catch(err){ toast('Erro ao importar alunos: '+(err?.message||err),'error'); }
 }
@@ -532,7 +581,7 @@ async function importarHistoricoArquivo(){
     if(labelRole()!=='admin'){ toast('Apenas administradores podem importar histórico.','error'); return; }
     const rows = await lerPlanilhaArquivo($('#arquivoHistorico'));
     if(!rows.length){ toast('A planilha não possui linhas para importar.','error'); return; }
-    await gravarListaImportada(colecoes.ocorrencias, rows, mapHistoricoImportado,{appendOnly:true,arquivoImportado:$('#arquivoHistorico')?.files?.[0]?.name||''});
+    await gravarListaImportada(colecoes.ocorrencias, rows, mapHistoricoImportado);
     await atualizarHistorico();
   }catch(err){ toast('Erro ao importar histórico: '+(err?.message||err),'error'); }
 }

@@ -165,7 +165,7 @@
 
         <div class="card">
           <h3>Importar nova planilha SQL de alunos</h3>
-          <p>Selecione um arquivo <strong>.xlsx, .xls ou .csv</strong>. O programa reconhece todas as colunas e mantém os dados completos na aba de cada aluno. O e-mail principal usado no envio será o <strong>E-MAIL MÃE</strong> quando existir.</p>
+          <p>Selecione um arquivo <strong>.xlsx, .xls ou .csv</strong>. O programa reconhece todas as colunas e mantém os dados completos na aba de cada aluno. O programa reconhece <strong>E-MAIL</strong>, <strong>E-MAIL DO PAI</strong>, <strong>E-MAIL MÃE</strong> e <strong>E-MAIL RESPONSÁVEL ACADÊMICO</strong>. O envio aos responsáveis usa mãe, pai e responsável acadêmico quando existirem, sem enviar para o e-mail do aluno.</p>
           <input id="arquivoAlunosSql" type="file" accept=".xlsx,.xls,.csv" />
           <div class="actions-row"><button id="importarAlunosArquivo">Importar planilha SQL selecionada</button><button id="importarAlunos" class="secondary">Importar base inicial inclusa</button></div>
           <small class="muted">A importação atualiza alunos existentes quando o nome/turma/RA forem iguais e cria novos quando necessário.</small>
