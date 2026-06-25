@@ -245,25 +245,58 @@ function slug(s=''){return s.toString().normalize('NFD').replace(/[\u0300-\u036f
 function today(){ return new Date().toISOString().slice(0,10); }
 function escapeHtml(v=''){return String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function toISODate(v){
-  if(!v) return '';
+  if(v === undefined || v === null || v === '') return '';
   if(v instanceof Date && !isNaN(v)) return v.toISOString().slice(0,10);
   const raw=String(v||'').trim();
   if(!raw) return '';
+
+  // Excel pode guardar datas como número serial. Corrige ao importar/ler planilhas antigas.
+  if(/^\d+(\.\d+)?$/.test(raw)){
+    const n=Number(raw);
+    if(n>20000 && n<70000){
+      const dt=new Date(Math.round((n-25569)*86400*1000));
+      if(!isNaN(dt)) return dt.toISOString().slice(0,10);
+    }
+  }
+
+  const validDate=(y,m,d)=>{
+    y=Number(y); m=Number(m); d=Number(d);
+    if(!y || y<1900 || y>2100 || m<1 || m>12 || d<1 || d>31) return '';
+    const dt=new Date(Date.UTC(y,m-1,d));
+    if(dt.getUTCFullYear()!==y || dt.getUTCMonth()!==m-1 || dt.getUTCDate()!==d) return '';
+    return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  };
+  const notFutureScore=(iso)=>{
+    if(!iso) return 999999999;
+    const todayIso=today();
+    // Prioriza datas que não estão no futuro para evitar interpretar 03/07 como julho quando a planilha era 07/03.
+    return iso<=todayIso ? 0 : 1;
+  };
+
   const iso=raw.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
   if(iso){
-    let y=iso[1], m=Number(iso[2]), d=Number(iso[3]);
-    // Corrige datas antigas que tenham sido salvas invertidas como 2026-30-03.
-    if(m>12 && d<=12){ const tmp=m; m=d; d=tmp; }
-    if(m>=1 && m<=12 && d>=1 && d<=31) return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const direct=validDate(iso[1], iso[2], iso[3]);
+    if(direct) return direct;
+    // Corrige datas antigas salvas invertidas como 2026-30-03.
+    const swapped=validDate(iso[1], iso[3], iso[2]);
+    if(swapped) return swapped;
   }
+
   const br=raw.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})/);
   if(br){
-    let a=Number(br[1]), b=Number(br[2]), y=br[3]; if(y.length===2) y='20'+y;
-    // Aceita tanto dd/mm/aaaa quanto mm/dd/aaaa vindo de planilhas antigas.
-    let d=a, m=b;
-    if(b>12 && a<=12){ m=a; d=b; }
-    if(m>=1 && m<=12 && d>=1 && d<=31) return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    let a=Number(br[1]), b=Number(br[2]), y=String(br[3]); if(y.length===2) y='20'+y;
+    const asBR=validDate(y,b,a); // dd/mm/aaaa
+    const asUS=validDate(y,a,b); // mm/dd/aaaa
+    if(asBR && !asUS) return asBR;
+    if(asUS && !asBR) return asUS;
+    if(asBR && asUS){
+      // Quando ambos são possíveis, escolhe a interpretação que não cria ocorrência em mês futuro.
+      const brScore=notFutureScore(asBR), usScore=notFutureScore(asUS);
+      if(usScore<brScore) return asUS;
+      return asBR;
+    }
   }
+
   const dt=new Date(raw);
   if(!isNaN(dt)) return dt.toISOString().slice(0,10);
   return '';
@@ -271,7 +304,8 @@ function toISODate(v){
 function formatDateBR(v){ const iso=toISODate(v); if(!iso) return v||''; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; }
 function todayBR(){ return formatDateBR(today()); }
 function dataRegistroKey(r){
-  return toISODate(r?.DATA) || toISODate(r?.['DATA DO REGISTRO']) || toISODate(r?.['DATA REGISTRO']) || toISODate(r?.['DATA DA OCORRÊNCIA']) || toISODate(r?.['Data']) || toISODate(r?.createdAtLocal) || '';
+  // Prioriza a data original importada do Excel quando existir, pois algumas planilhas antigas chegam em formato mm/dd/aaaa.
+  return toISODate(r?.dataOriginalImportada) || toISODate(r?.DATA) || toISODate(r?.['DATA DO REGISTRO']) || toISODate(r?.['DATA REGISTRO']) || toISODate(r?.['DATA DA OCORRÊNCIA']) || toISODate(r?.['Data']) || toISODate(r?.createdAtLocal) || '';
 }
 function emailsDoAluno(aluno){
   const dados = aluno?.dadosCompletos || {};
