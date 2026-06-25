@@ -30,6 +30,7 @@
       <button class="nav active" data-page="novo">Novo registro</button>
       <button class="nav teacher-only" data-page="professor">Registro professor</button>
       <button class="nav" data-page="historico">Histórico</button>
+      <button class="nav dash-only" data-page="dashboard">Dashboard</button>
       <button class="nav admin-only" data-page="alunos">Alunos</button>
       <button class="nav admin-only" data-page="admin">Admin</button>
       <button id="logoutBtn" class="logout">Sair</button>
@@ -117,6 +118,42 @@
             <button type="button" id="limparProfessorForm" class="secondary">Limpar</button>
           </div>
         </form>
+      </section>
+
+
+      <section id="page-dashboard" class="page">
+        <div class="hero-card dashboard-hero">
+          <div class="hero-overlay">
+            <img src="assets/logosesi.png" alt="SESI" class="hero-logo">
+            <div><h1>Dashboard de Ocorrências</h1><p>Indicadores para acompanhamento disciplinar e pedagógico</p></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="grid four">
+            <div><label>Período inicial</label><input id="dashInicio" type="date" /></div>
+            <div><label>Período final</label><input id="dashFim" type="date" /></div>
+            <div><label>Turma</label><select id="dashTurma"><option value="">Todas</option></select></div>
+            <div><label>Origem</label><select id="dashOrigem"><option value="">Todas</option><option value="disciplinar">Registro diário</option><option value="professor">Professor</option></select></div>
+          </div>
+          <div class="actions"><button id="atualizarDashboard">Atualizar dashboard</button><button id="limparDashboard" class="secondary">Limpar filtros</button></div>
+        </div>
+
+        <div id="dashboardCards" class="dashboard-cards"></div>
+
+        <div class="dashboard-grid">
+          <div class="card"><h3>Ocorrências por tipo</h3><div id="chartTipo" class="chart-box"></div></div>
+          <div class="card"><h3>Ocorrências por mês</h3><div id="chartMes" class="chart-box"></div></div>
+          <div class="card"><h3>Top 10 alunos com mais ocorrências</h3><div id="chartAlunos" class="chart-box"></div></div>
+          <div class="card"><h3>Turmas com mais ocorrências</h3><div id="chartTurmas" class="chart-box"></div></div>
+          <div class="card"><h3>Itens mais recorrentes do professor</h3><div id="chartItensProfessor" class="chart-box"></div></div>
+          <div class="card"><h3>Sanções e natureza</h3><div id="chartSancoes" class="chart-box"></div></div>
+        </div>
+
+        <div class="card">
+          <h3>Alunos que exigem atenção</h3>
+          <div id="dashboardTabelaAlunos" class="table-wrap"></div>
+        </div>
       </section>
 
       <section id="page-historico" class="page">

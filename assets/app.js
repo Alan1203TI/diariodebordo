@@ -285,7 +285,7 @@ function isPedagogia(){ return labelRole()==='pedagogia'; }
 function canAccessPage(page){
   const role = labelRole();
   if(role==='admin') return true;
-  if(role==='pedagogia') return ['novo','professor','historico','alunos'].includes(page);
+  if(role==='pedagogia') return ['novo','professor','historico','dashboard','alunos'].includes(page);
   if(role==='disciplinario') return ['novo','historico'].includes(page);
   if(role==='professor') return ['professor','historico'].includes(page);
   return page==='historico';
@@ -554,7 +554,96 @@ async function salvarRegistroProfessor(ev){ if(!['admin','professor'].includes(l
   atualizarHistorico();
 }
 
-async function atualizarHistorico(){ const snap=await getDocs(query(collection(db,colecoes.ocorrencias), orderBy('createdAtLocal','desc'), limit(5000))); state.historico=snap.docs.map(d=>({id:d.id,...d.data()})); renderHistorico(); const sr=$('#statRegistros'); if(sr) sr.textContent=state.historico.length; const se=$('#statEmails'); if(se) se.textContent=state.historico.filter(r=>['pendente','enviado-cloud','enviado-emailjs'].includes(r.statusEmail)).length; }
+async function atualizarHistorico(){ const snap=await getDocs(query(collection(db,colecoes.ocorrencias), orderBy('createdAtLocal','desc'), limit(5000))); state.historico=snap.docs.map(d=>({id:d.id,...d.data()})); renderHistorico(); const sr=$('#statRegistros'); if(sr) sr.textContent=state.historico.length; const se=$('#statEmails'); if(se) se.textContent=state.historico.filter(r=>['pendente','enviado-cloud','enviado-emailjs'].includes(r.statusEmail)).length; preencherDashboardTurmas(); renderDashboard(); }
+
+function origemRegistro(r){
+  return r.origem==='professor' || r.tipoRegistro==='professor-sala' || r['CONTROLE DIÁRIO']==='OCORRÊNCIA PROFESSOR' ? 'professor' : 'disciplinar';
+}
+function dashboardRegistrosFiltrados(){
+  const ini=$('#dashInicio')?.value||'', fim=$('#dashFim')?.value||'', turma=$('#dashTurma')?.value||'', origem=$('#dashOrigem')?.value||'';
+  return state.historico.filter(r=>
+    (!ini || String(r.DATA||'')>=ini) &&
+    (!fim || String(r.DATA||'')<=fim) &&
+    (!turma || r.TURMA===turma) &&
+    (!origem || origemRegistro(r)===origem)
+  );
+}
+function contarPor(lista, getter){
+  const map=new Map();
+  lista.forEach(r=>{
+    const k=(getter(r)||'Não informado').toString().trim()||'Não informado';
+    map.set(k,(map.get(k)||0)+1);
+  });
+  return [...map.entries()].map(([label,value])=>({label,value})).sort((a,b)=>b.value-a.value);
+}
+function mesRegistro(r){
+  const d=String(r.DATA||r.createdAtLocal||'').slice(0,10);
+  if(!/^\d{4}-\d{2}/.test(d)) return 'Sem data';
+  const [y,m]=d.split('-'); return `${m}/${y}`;
+}
+function chartBars(elId, data, maxItems=10){
+  const el=$('#'+elId); if(!el) return;
+  const rows=(data||[]).slice(0,maxItems);
+  if(!rows.length){ el.innerHTML='<p class="muted">Sem dados para exibir.</p>'; return; }
+  const max=Math.max(...rows.map(r=>r.value),1);
+  el.innerHTML=rows.map(r=>`<div class="bar-row"><span class="bar-label" title="${escapeHtml(r.label)}">${escapeHtml(r.label)}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.max(4,(r.value/max)*100)}%"></div></div><strong>${r.value}</strong></div>`).join('');
+}
+function chartTimeline(elId, data){
+  const el=$('#'+elId); if(!el) return;
+  const rows=[...(data||[])].sort((a,b)=>a.label.localeCompare(b.label,'pt-BR')).slice(-12);
+  if(!rows.length){ el.innerHTML='<p class="muted">Sem dados para exibir.</p>'; return; }
+  const max=Math.max(...rows.map(r=>r.value),1);
+  el.innerHTML=`<div class="mini-line">${rows.map(r=>`<div class="line-col"><div class="line-bar" style="height:${Math.max(8,(r.value/max)*130)}px"></div><small>${escapeHtml(r.label)}</small><strong>${r.value}</strong></div>`).join('')}</div>`;
+}
+function preencherDashboardTurmas(){
+  const sel=$('#dashTurma'); if(!sel) return;
+  const old=sel.value;
+  sel.innerHTML='<option value="">Todas</option>';
+  turmas().forEach(t=>sel.insertAdjacentHTML('beforeend',`<option>${escapeHtml(t)}</option>`));
+  sel.value=old;
+}
+function renderDashboard(){
+  if(!$('#page-dashboard')) return;
+  if(!canAccessPage('dashboard')) return;
+  const lista=dashboardRegistrosFiltrados();
+  const alunosUnicos=new Set(lista.map(r=>`${r.ALUNO||''}|${r.TURMA||''}`).filter(x=>x.trim()!=='|')).size;
+  const professor=lista.filter(r=>origemRegistro(r)==='professor').length;
+  const disciplinar=lista.filter(r=>origemRegistro(r)==='disciplinar').length;
+  const reconhecimentos=lista.filter(r=>norm(r['CONTROLE DIÁRIO']).includes('reconhecimento')).length;
+  const saude=lista.filter(r=>norm(r['CONTROLE DIÁRIO']).includes('saude')).length;
+  const porTurma=contarPor(lista,r=>r.TURMA);
+  const porAluno=contarPor(lista,r=>r.ALUNO);
+  const cards=[
+    ['Total de registros', lista.length],
+    ['Alunos com registros', alunosUnicos],
+    ['Registro diário', disciplinar],
+    ['Registros professor', professor],
+    ['Reconhecimentos', reconhecimentos],
+    ['Saúde', saude],
+    ['Turma com mais registros', porTurma[0]?`${porTurma[0].label} (${porTurma[0].value})`:'-'],
+    ['Aluno com mais registros', porAluno[0]?`${porAluno[0].label} (${porAluno[0].value})`:'-']
+  ];
+  const cardsEl=$('#dashboardCards');
+  if(cardsEl) cardsEl.innerHTML=cards.map(([t,v])=>`<div class="dash-card"><span>${escapeHtml(t)}</span><strong>${escapeHtml(v)}</strong></div>`).join('');
+  chartBars('chartTipo', contarPor(lista,r=>r['CONTROLE DIÁRIO']||r.tipoRegistro||'Registro'), 10);
+  chartTimeline('chartMes', contarPor(lista, mesRegistro));
+  chartBars('chartAlunos', porAluno, 10);
+  chartBars('chartTurmas', porTurma, 10);
+  chartBars('chartItensProfessor', contarPor(lista.filter(r=>origemRegistro(r)==='professor'), r=>r['ITEM DE REFERÊNCIA']||r['ITEM DE REFERENCIA']||r.ITEM), 10);
+  const sancoes = lista.filter(r=>r['SANÇÕES']||r['SANCOES']||r['NATUREZA']);
+  chartBars('chartSancoes', contarPor(sancoes, r=>r['SANÇÕES']||r['SANCOES']||r['NATUREZA']), 8);
+  const table=$('#dashboardTabelaAlunos');
+  if(table){
+    const rows=porAluno.slice(0,20).map(a=>{
+      const regs=lista.filter(r=>(r.ALUNO||'')===a.label).sort((x,y)=>String(y.DATA||'').localeCompare(String(x.DATA||'')));
+      const ultimo=regs[0]||{};
+      const tipo=contarPor(regs,r=>r['CONTROLE DIÁRIO']||r.tipoRegistro||'Registro')[0]?.label||'-';
+      return `<tr><td>${escapeHtml(a.label)}</td><td>${escapeHtml(ultimo.TURMA||'-')}</td><td>${a.value}</td><td>${escapeHtml(tipo)}</td><td>${escapeHtml(formatDateBR(ultimo.DATA)||'-')}</td></tr>`;
+    }).join('');
+    table.innerHTML=`<table class="dash-table"><thead><tr><th>Aluno</th><th>Turma</th><th>Total</th><th>Tipo mais frequente</th><th>Último registro</th></tr></thead><tbody>${rows||'<tr><td colspan="5">Sem dados.</td></tr>'}</tbody></table>`;
+  }
+}
+
 function renderHistorico(){ const busca=$('#filtroBusca').value.toLowerCase(), turma=$('#filtroTurma').value, ini=$('#filtroInicio').value, fim=$('#filtroFim').value; let lista=state.historico.filter(r=>(!turma||r.TURMA===turma)&&(!ini||r.DATA>=ini)&&(!fim||r.DATA<=fim)); if(busca) lista=lista.filter(r=>JSON.stringify(r).toLowerCase().includes(busca)); $('#listaHistorico').innerHTML=lista.map(r=>`<article class="item clickable" data-registro="${r.id}"><h4>${escapeHtml(r.ALUNO||'')}</h4><p><strong>Turma:</strong> ${escapeHtml(r.TURMA||'')} • <strong>Data:</strong> ${escapeHtml(formatDateBR(r.DATA)||'')} • <strong>Registrado por:</strong> ${escapeHtml(registroAutorDisplay(r))}</p><p>${escapeHtml(r['DESCREVA O OCORRIDO']||r['DESCREVA O RECONHECIMENTO']||r['MOTIVO']||r['SINTOMAS']||'Clique para ver todas as informações do registro.')}</p><div class="badges"><span class="badge">${escapeHtml(r['CONTROLE DIÁRIO']||'Registro')}</span>${r.origem==='professor'?'<span class="badge">Registro professor</span>':`<span class="badge">E-mail: ${escapeHtml(r.statusEmail||'não informado')}</span>`}</div></article>`).join('') || '<div class="card">Nenhum registro encontrado.</div>'; $$('[data-registro]').forEach(el=>el.onclick=()=>abrirRegistro(el.dataset.registro)); }
 function renderAlunos(){ $('#listaAlunos').innerHTML=state.alunos.slice(0,700).map(a=>`<div class="item clickable" data-aluno="${a.id}"><h4>${escapeHtml(a.nome)}</h4><p>${escapeHtml(a.turma||'')}</p><p>${emailsDoAluno(a).map(escapeHtml).join(', ')||'Sem e-mail cadastrado'}</p><div class="badges"><span class="badge">Ver aba completa</span></div></div>`).join(''); $$('[data-aluno]').forEach(el=>el.onclick=()=>abrirAluno(el.dataset.aluno)); }
 function keyValuesTable(obj){ const rows=Object.entries(obj||{}).filter(([k,v])=>!['id','dadosCompletos'].includes(k)&&v!==undefined&&v!==null&&String(v).trim()!=='' ); return `<div class="detail-grid">${rows.map(([k,v])=>`<div><strong>${escapeHtml(k)}</strong><span>${escapeHtml(v)}</span></div>`).join('')}</div>`; }
@@ -659,9 +748,10 @@ function trocarPagina(p){
   if(!canAccessPage(p)){ toast('Você não tem permissão para acessar esta área.','error'); p = canAccessPage('historico') ? 'historico' : (canAccessPage('novo')?'novo':'professor'); }
   $$('.nav').forEach(b=>b.classList.toggle('active',b.dataset.page===p));
   $$('.page').forEach(s=>s.classList.toggle('active',s.id===`page-${p}`));
-  $('#pageTitle').textContent={novo:'Novo registro',professor:'Registro professor',historico:'Histórico',alunos:'Alunos',admin:'Admin'}[p]||'Registro';
+  $('#pageTitle').textContent={novo:'Novo registro',professor:'Registro professor',historico:'Histórico',dashboard:'Dashboard',alunos:'Alunos',admin:'Admin'}[p]||'Registro';
   $('.sidebar').classList.remove('open');
   if(p==='historico') atualizarHistorico();
+  if(p==='dashboard') renderDashboard();
   if(p==='alunos') renderAlunos();
   if(p==='admin') carregarUsuarios();
 }
@@ -717,5 +807,5 @@ async function criarUsuarioAdmin(ev){
 $('#loginForm').addEventListener('submit',async e=>{ e.preventDefault(); try{ await signInWithEmailAndPassword(auth,$('#loginEmail').value,$('#loginPassword').value); }catch(err){toast('Erro no login: '+err.message,'error')} });
 if($('#changePasswordForm')) $('#changePasswordForm').addEventListener('submit',trocarSenhaInicial);
 $('#logoutBtn').onclick=()=>signOut(auth); $('#menuBtn').onclick=()=>$('.sidebar').classList.toggle('open'); $$('.nav').forEach(b=>b.onclick=()=>trocarPagina(b.dataset.page));
-$('#turmaSelect').onchange=preencherAlunos; $('#alunoSelect').onchange=atualizarResponsaveis; if($('#profTurmaSelect')) $('#profTurmaSelect').onchange=preencherAlunosProfessor; if($('#profAlunoSelect')) $('#profAlunoSelect').onchange=atualizarAlunoProfessor; $('#registroForm').onsubmit=salvarRegistro; if($('#professorForm')) $('#professorForm').onsubmit=salvarRegistroProfessor; $('#limparForm').onclick=()=>{ $('#registroForm').reset(); renderControleSection(); }; if($('#limparProfessorForm')) $('#limparProfessorForm').onclick=()=>{ $('#professorForm').reset(); const pn=$('#professorNome'); if(pn) pn.value=state.profile.nome || state.user.email; }; $('#aplicarFiltros').onclick=renderHistorico; $('#exportarCsv').onclick=exportarCsv; $('#salvarAluno').onclick=salvarAluno; $('#importarAlunos').onclick=importarAlunos; $('#importarHistorico').onclick=importarHistorico; $('#importarAlunosArquivo').onclick=importarAlunosArquivo; $('#importarHistoricoArquivo').onclick=importarHistoricoArquivo; $('#adminUserForm').addEventListener('submit',criarUsuarioAdmin); $('#salvarConfig').onclick=salvarConfig; $('#limparBanco').onclick=limparBancoDados; $('#modalClose').onclick=fecharModal; $('#modalBackdrop').onclick=fecharModal;
+$('#turmaSelect').onchange=preencherAlunos; $('#alunoSelect').onchange=atualizarResponsaveis; if($('#profTurmaSelect')) $('#profTurmaSelect').onchange=preencherAlunosProfessor; if($('#profAlunoSelect')) $('#profAlunoSelect').onchange=atualizarAlunoProfessor; $('#registroForm').onsubmit=salvarRegistro; if($('#professorForm')) $('#professorForm').onsubmit=salvarRegistroProfessor; $('#limparForm').onclick=()=>{ $('#registroForm').reset(); renderControleSection(); }; if($('#limparProfessorForm')) $('#limparProfessorForm').onclick=()=>{ $('#professorForm').reset(); const pn=$('#professorNome'); if(pn) pn.value=state.profile.nome || state.user.email; }; $('#aplicarFiltros').onclick=renderHistorico; $('#exportarCsv').onclick=exportarCsv; if($('#atualizarDashboard')) $('#atualizarDashboard').onclick=renderDashboard; if($('#limparDashboard')) $('#limparDashboard').onclick=()=>{ ['#dashInicio','#dashFim','#dashOrigem'].forEach(s=>{ if($(s)) $(s).value=''; }); if($('#dashTurma')) $('#dashTurma').value=''; renderDashboard(); }; $('#salvarAluno').onclick=salvarAluno; $('#importarAlunos').onclick=importarAlunos; $('#importarHistorico').onclick=importarHistorico; $('#importarAlunosArquivo').onclick=importarAlunosArquivo; $('#importarHistoricoArquivo').onclick=importarHistoricoArquivo; $('#adminUserForm').addEventListener('submit',criarUsuarioAdmin); $('#salvarConfig').onclick=salvarConfig; $('#limparBanco').onclick=limparBancoDados; $('#modalClose').onclick=fecharModal; $('#modalBackdrop').onclick=fecharModal;
 onAuthStateChanged(auth,async user=>{ state.user=user; $('#loginScreen').classList.toggle('hidden',!!user); $('#app').classList.toggle('hidden',!user); if(user){ await init(); await carregarPerfil(); applyRolePermissions(); await carregarConfig(); await carregarAlunos(); await atualizarHistorico(); trocarPagina(canAccessPage('novo')?'novo':(canAccessPage('professor')?'professor':'historico')); } });

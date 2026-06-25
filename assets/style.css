@@ -23,3 +23,33 @@
 @media(max-width:700px){.hero-overlay{align-items:center;flex-direction:column;text-align:center}.hero-logo{max-width:220px}.logo img{width:96px}}
 
 .password-modal{position:fixed;inset:0;background:rgba(15,23,42,.78);z-index:200;display:grid;place-items:center;padding:20px}.password-card{width:min(460px,94vw);background:#fff;border-radius:22px;padding:28px;box-shadow:0 28px 80px rgba(0,0,0,.35);border-top:8px solid var(--brand)}.password-card h2{margin:0 0 8px;color:var(--brand)}.password-card p{margin:0 0 18px;color:var(--muted)}.password-card button{width:100%;margin-top:16px}.password-card small{display:block;margin-top:12px;color:var(--muted)}
+
+
+/* Dashboard */
+.dashboard-hero{background-image:linear-gradient(135deg,rgba(0,74,152,.88),rgba(0,115,183,.72)),url('escola-sesi-dom-bosco.png');}
+.dashboard-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:16px 0;}
+.dash-card{background:#fff;border:1px solid #dbeafe;border-radius:16px;padding:16px 18px;box-shadow:0 8px 20px rgba(15,23,42,.06);}
+.dash-card span{display:block;color:#64748b;font-size:13px;margin-bottom:8px;}
+.dash-card strong{display:block;color:#003f88;font-size:24px;line-height:1.15;word-break:break-word;}
+.dashboard-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;}
+.chart-box{min-height:220px;}
+.bar-row{display:grid;grid-template-columns:150px 1fr 42px;gap:10px;align-items:center;margin:10px 0;font-size:13px;}
+.bar-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#334155;}
+.bar-track{height:16px;background:#e0f2fe;border-radius:999px;overflow:hidden;}
+.bar-fill{height:100%;background:linear-gradient(90deg,#004a98,#0ea5e9);border-radius:999px;}
+.mini-line{display:flex;align-items:flex-end;gap:10px;min-height:180px;padding-top:20px;overflow-x:auto;}
+.line-col{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:48px;color:#475569;font-size:12px;}
+.line-bar{width:22px;background:linear-gradient(180deg,#0ea5e9,#004a98);border-radius:8px 8px 2px 2px;}
+.line-col strong{color:#003f88;font-size:13px;}
+.table-wrap{overflow:auto;}
+.dash-table{width:100%;border-collapse:collapse;font-size:14px;}
+.dash-table th,.dash-table td{padding:10px 12px;border-bottom:1px solid #e2e8f0;text-align:left;}
+.dash-table th{background:#eff6ff;color:#003f88;font-weight:700;}
+@media(max-width:900px){
+  .dashboard-cards{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .dashboard-grid{grid-template-columns:1fr;}
+  .bar-row{grid-template-columns:110px 1fr 34px;}
+}
+@media(max-width:560px){
+  .dashboard-cards{grid-template-columns:1fr;}
+}
