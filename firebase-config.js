@@ -14,10 +14,10 @@ export const firebaseConfig = {
 // Configuração opcional para envio direto via EmailJS.
 // Deixe enabled:false se for usar apenas Cloud Functions ou se ainda não configurou o EmailJS.
 export const emailJsConfig = {
-  enabled: false,
-  publicKey: "",
-  serviceId: "",
-  templateId: ""
+  enabled: true,
+  publicKey: "xVJofhQxZtgMgXSHE",
+  serviceId: "service_hxs1dnc",
+  templateId: "template_gp9jyis"
 };
 
 window.emailJsConfig = emailJsConfig;
