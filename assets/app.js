@@ -165,6 +165,10 @@ function emailsDoAluno(aluno){
 }
 function alunoSelecionado(){ return state.alunos.find(a=>a.id===$('#alunoSelect').value); }
 function labelRole(){ return state.profile.role || state.profile.perfil || 'disciplinario'; }
+function isAdmin(){ return labelRole()==='admin'; }
+function isProfessor(){ return labelRole()==='professor'; }
+function isDisciplinario(){ return labelRole()==='disciplinario'; }
+function perfilLabel(role=labelRole()){ return ({admin:'admin', disciplinario:'disciplinário', professor:'professor', pedagogia:'pedagogia'}[role] || role); }
 function usuarioDisplay(){
   const nome = state.profile?.nome || state.profile?.name || state.user?.displayName || state.user?.email || 'Usuário';
   return `${nome} (${labelRole()})`;
@@ -174,7 +178,7 @@ function registroAutorDisplay(r={}){
 }
 function registroEmailInstitucional(){ return 'Registrado pela equipe disciplinar do SESI Dom Bosco.'; }
 
-async function init(){ $('#dataRegistro').value = today(); renderCampos(); }
+async function init(){ $('#dataRegistro').value = today(); const pd=$('#profDataRegistro'); if(pd) pd.value=today(); renderCampos(); }
 function renderCampos(){
   const box = $('#formCampos'); box.innerHTML='';
   box.insertAdjacentHTML('beforeend', `<div class="forms-question full"><div class="q-label"><span>4.</span> CONTROLE DIÁRIO <b>*</b></div><select name="CONTROLE DIÁRIO" id="controleDiarioSelect" required><option value="">Selecionar sua resposta</option>${CONTROLE_OPTIONS.map(o=>`<option value="${o}">${o}</option>`).join('')}</select></div><div id="controleSection" class="full"></div>`);
@@ -208,10 +212,14 @@ function renderQuestion(field){
   return q;
 }
 function turmas(){ const ts=[...new Set([...TURMAS_FORMS,...state.alunos.map(a=>a.turma).filter(Boolean)])]; return ts.sort((a,b)=>a.localeCompare(b,'pt-BR')); }
-function preencherTurmas(){ ['#turmaSelect','#filtroTurma'].forEach(sel=>{ const old=$(sel).value; $(sel).innerHTML = sel==='#filtroTurma'?'<option value="">Todas</option>':'<option value="">Selecione</option>'; turmas().forEach(t=>$(sel).insertAdjacentHTML('beforeend',`<option>${escapeHtml(t)}</option>`)); $(sel).value=old; }); }
+function preencherTurmas(){ ['#turmaSelect','#filtroTurma','#profTurmaSelect'].forEach(sel=>{ const el=$(sel); if(!el) return; const old=el.value; el.innerHTML = sel==='#filtroTurma'?'<option value="">Todas</option>':'<option value="">Selecione</option>'; turmas().forEach(t=>el.insertAdjacentHTML('beforeend',`<option>${escapeHtml(t)}</option>`)); el.value=old; }); }
 function preencherAlunos(){ const turma=$('#turmaSelect').value; const alunos=state.alunos.filter(a=>!turma||a.turma===turma).sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR')); $('#alunoSelect').innerHTML='<option value="">Selecione</option>'+alunos.map(a=>`<option value="${a.id}">${escapeHtml(a.nome)}</option>`).join(''); $('#responsaveisBox').textContent='Selecione o aluno para visualizar os e-mails dos responsáveis.'; }
+function preencherAlunosProfessor(){ const turma=$('#profTurmaSelect')?.value||''; const alunos=state.alunos.filter(a=>!turma||a.turma===turma).sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR')); const sel=$('#profAlunoSelect'); if(!sel) return; sel.innerHTML='<option value="">Selecione</option>'+alunos.map(a=>`<option value="${a.id}">${escapeHtml(a.nome)}</option>`).join(''); const box=$('#profAlunoBox'); if(box) box.textContent='Selecione o aluno para visualizar os dados completos.'; }
+function alunoSelecionadoProfessor(){ return state.alunos.find(a=>a.id===$('#profAlunoSelect')?.value); }
+function atualizarAlunoProfessor(){ const a=alunoSelecionadoProfessor(); const box=$('#profAlunoBox'); if(!a||!box) return; box.innerHTML=`<strong>${escapeHtml(a.nome)}</strong> — ${escapeHtml(a.turma||'')}<br><span class="muted">Registro interno, sem envio de e-mail.</span><br><button type="button" class="mini" id="verAlunoProfessor">Ver aba completa do aluno</button>`; $('#verAlunoProfessor').onclick=()=>abrirAluno(a.id); }
+
 function atualizarResponsaveis(){ const a=alunoSelecionado(); if(!a) return; const emails=emailsDoAluno(a); $('#responsaveisBox').innerHTML = `<strong>${escapeHtml(a.nome)}</strong> — ${escapeHtml(a.turma||'')}<br>E-mails responsáveis: ${emails.length?emails.map(escapeHtml).join(', '):'<span style="color:#b91c1c">não cadastrados</span>'}<br><button type="button" class="mini" id="verAlunoSelecionado">Ver aba completa do aluno</button>`; $('#verAlunoSelecionado').onclick=()=>abrirAluno(a.id); }
-async function carregarAlunos(){ const snap=await getDocs(query(collection(db,colecoes.alunos), orderBy('turma'))); state.alunos=snap.docs.map(d=>({id:d.id,...d.data()})); preencherTurmas(); preencherAlunos(); renderAlunos(); const stat=$('#statAlunos'); if(stat) stat.textContent=state.alunos.length; }
+async function carregarAlunos(){ const snap=await getDocs(query(collection(db,colecoes.alunos), orderBy('turma'))); state.alunos=snap.docs.map(d=>({id:d.id,...d.data()})); preencherTurmas(); preencherAlunos(); preencherAlunosProfessor(); renderAlunos(); const stat=$('#statAlunos'); if(stat) stat.textContent=state.alunos.length; }
 async function carregarConfig(){ const ref=doc(db,colecoes.config,'geral'); const s=await getDoc(ref); state.config=s.exists()?s.data():{}; $('#configCopia').value=state.config.emailCopia||''; $('#configUnidade').value=state.config.unidade||'SESI Dom Bosco'; }
 async function salvarConfig(){ await setDoc(doc(db,colecoes.config,'geral'),{emailCopia:$('#configCopia').value.trim(),unidade:$('#configUnidade').value.trim(),updatedAt:serverTimestamp()},{merge:true}); toast('Configurações salvas.'); carregarConfig(); }
 async function carregarPerfil(){
@@ -222,6 +230,18 @@ async function carregarPerfil(){
   $('#userLabel').textContent=usuarioDisplay();
   $$('.admin-only').forEach(e=>e.style.display=labelRole()==='admin'?'block':'none');
 }
+
+function aplicarPermissoes(){
+  const role=labelRole();
+  $$('.admin-only').forEach(e=>e.style.display=role==='admin'?'block':'none');
+  $$('.teacher-only').forEach(e=>e.style.display=(role==='admin'||role==='professor')?'block':'none');
+  const novoBtn=document.querySelector('[data-page="novo"]');
+  const histBtn=document.querySelector('[data-page="historico"]');
+  if(novoBtn) novoBtn.style.display=(role==='admin'||role==='disciplinario'||role==='pedagogia')?'block':'none';
+  if(histBtn) histBtn.style.display=(role==='admin'||role==='disciplinario'||role==='pedagogia')?'block':'none';
+  if(role==='professor') trocarPagina('professor');
+}
+
 function resumoCampos(registro){
   const ignorar=['id','TURMA','ALUNO','DATA','Email','disciplinario','alunoId','emailsResponsaveis','emailCopia','statusEmail','createdAt','createdAtLocal','updatedAt','emailSentAt','emailErro','emailDestino','textoEmail','detalhes_html','alunoDados','registradoPorNome','registradoPorCargo','registradoPorDisplay','emailPedagogia','emailCopiaStatus'];
   return Object.entries(registro).filter(([k,v])=>!ignorar.includes(k)&&v!==undefined&&v!==null&&String(v).trim()!=='').map(([k,v])=>`${k}: ${v}`).join('\n');
@@ -311,12 +331,47 @@ async function tentarEmailJs(registro,id){
     toast('Erro ao enviar e-mail: '+erro,'error');
   }
 }
+
+async function salvarRegistroProfessor(ev){
+  ev.preventDefault();
+  const aluno=alunoSelecionadoProfessor();
+  if(!aluno){ toast('Selecione um aluno.','error'); return; }
+  const dados={}; new FormData($('#professorForm')).forEach((v,k)=>dados[k]=v);
+  const registro={
+    ...dados,
+    origem:'professor',
+    tipoRegistro:'professor-sala',
+    'CONTROLE DIÁRIO':'OCORRÊNCIA PROFESSOR',
+    TURMA:aluno.turma,
+    ALUNO:aluno.nome,
+    DATA:$('#profDataRegistro').value,
+    Email:state.user.email,
+    disciplinario:state.user.email,
+    registradoPorNome:state.profile?.nome||state.user.email,
+    registradoPorCargo:labelRole(),
+    registradoPorDisplay:usuarioDisplay(),
+    alunoId:aluno.id,
+    alunoDados:aluno.dadosCompletos||aluno,
+    statusEmail:'não enviado - registro de professor',
+    emailErro:'Registro interno. Não envia e-mail aos responsáveis.',
+    createdAt:serverTimestamp(),
+    createdAtLocal:new Date().toISOString()
+  };
+  registro.textoEmail='Registro interno de professor. Não há envio de e-mail.';
+  await addDoc(collection(db,colecoes.ocorrencias),registro);
+  toast('Registro do professor salvo no histórico do aluno. Nenhum e-mail foi enviado.');
+  $('#professorForm').reset();
+  const pn=$('#professorNome'); if(pn) pn.value=state.profile.nome || state.user.email;
+  atualizarAlunoProfessor();
+  atualizarHistorico();
+}
+
 async function atualizarHistorico(){ const snap=await getDocs(query(collection(db,colecoes.ocorrencias), orderBy('createdAtLocal','desc'), limit(500))); state.historico=snap.docs.map(d=>({id:d.id,...d.data()})); renderHistorico(); const sr=$('#statRegistros'); if(sr) sr.textContent=state.historico.length; const se=$('#statEmails'); if(se) se.textContent=state.historico.filter(r=>['pendente','enviado-cloud','enviado-emailjs'].includes(r.statusEmail)).length; }
-function renderHistorico(){ const busca=$('#filtroBusca').value.toLowerCase(), turma=$('#filtroTurma').value, ini=$('#filtroInicio').value, fim=$('#filtroFim').value; let lista=state.historico.filter(r=>(!turma||r.TURMA===turma)&&(!ini||r.DATA>=ini)&&(!fim||r.DATA<=fim)); if(busca) lista=lista.filter(r=>JSON.stringify(r).toLowerCase().includes(busca)); $('#listaHistorico').innerHTML=lista.map(r=>`<article class="item clickable" data-registro="${r.id}"><h4>${escapeHtml(r.ALUNO||'')}</h4><p><strong>Turma:</strong> ${escapeHtml(r.TURMA||'')} • <strong>Data:</strong> ${escapeHtml(formatDateBR(r.DATA)||'')} • <strong>Registrado por:</strong> ${escapeHtml(registroAutorDisplay(r))}</p><p>${escapeHtml(r['DESCREVA O OCORRIDO']||r['DESCREVA O RECONHECIMENTO']||r['MOTIVO']||r['SINTOMAS']||'Clique para ver todas as informações do registro.')}</p><div class="badges"><span class="badge">${escapeHtml(r['CONTROLE DIÁRIO']||'Registro')}</span><span class="badge">E-mail: ${escapeHtml(r.statusEmail||'não informado')}</span></div></article>`).join('') || '<div class="card">Nenhum registro encontrado.</div>'; $$('[data-registro]').forEach(el=>el.onclick=()=>abrirRegistro(el.dataset.registro)); }
+function renderHistorico(){ const busca=$('#filtroBusca').value.toLowerCase(), turma=$('#filtroTurma').value, ini=$('#filtroInicio').value, fim=$('#filtroFim').value; let lista=state.historico.filter(r=>(!turma||r.TURMA===turma)&&(!ini||r.DATA>=ini)&&(!fim||r.DATA<=fim)); if(busca) lista=lista.filter(r=>JSON.stringify(r).toLowerCase().includes(busca)); $('#listaHistorico').innerHTML=lista.map(r=>`<article class="item clickable" data-registro="${r.id}"><h4>${escapeHtml(r.ALUNO||'')}</h4><p><strong>Turma:</strong> ${escapeHtml(r.TURMA||'')} • <strong>Data:</strong> ${escapeHtml(formatDateBR(r.DATA)||'')} • <strong>Registrado por:</strong> ${escapeHtml(registroAutorDisplay(r))}</p><p>${escapeHtml(r['DESCREVA O OCORRIDO']||r['DESCREVA O RECONHECIMENTO']||r['MOTIVO']||r['SINTOMAS']||'Clique para ver todas as informações do registro.')}</p><div class="badges"><span class="badge">${escapeHtml(r['CONTROLE DIÁRIO']||'Registro')}</span>${r.origem==='professor'?'<span class="badge">Registro professor</span>':`<span class="badge">E-mail: ${escapeHtml(r.statusEmail||'não informado')}</span>`}</div></article>`).join('') || '<div class="card">Nenhum registro encontrado.</div>'; $$('[data-registro]').forEach(el=>el.onclick=()=>abrirRegistro(el.dataset.registro)); }
 function renderAlunos(){ $('#listaAlunos').innerHTML=state.alunos.slice(0,700).map(a=>`<div class="item clickable" data-aluno="${a.id}"><h4>${escapeHtml(a.nome)}</h4><p>${escapeHtml(a.turma||'')}</p><p>${emailsDoAluno(a).map(escapeHtml).join(', ')||'Sem e-mail cadastrado'}</p><div class="badges"><span class="badge">Ver aba completa</span></div></div>`).join(''); $$('[data-aluno]').forEach(el=>el.onclick=()=>abrirAluno(el.dataset.aluno)); }
 function keyValuesTable(obj){ const rows=Object.entries(obj||{}).filter(([k,v])=>!['id','dadosCompletos'].includes(k)&&v!==undefined&&v!==null&&String(v).trim()!=='' ); return `<div class="detail-grid">${rows.map(([k,v])=>`<div><strong>${escapeHtml(k)}</strong><span>${escapeHtml(v)}</span></div>`).join('')}</div>`; }
 function abrirAluno(id){ const a=state.alunos.find(x=>x.id===id); if(!a) return; state.alunoAberto=a; const regs=state.historico.filter(r=>r.alunoId===id || (r.ALUNO===a.nome && r.TURMA===a.turma)); $('#modalTitle').textContent='Aba do aluno'; $('#modalBody').innerHTML=`<h3>${escapeHtml(a.nome)}</h3><p class="muted">${escapeHtml(a.turma||'')} • ${emailsDoAluno(a).map(escapeHtml).join(', ')||'Sem e-mail cadastrado'}</p><h4>Informações completas da planilha SQL</h4>${keyValuesTable(a.dadosCompletos||a)}<h4>Registros deste aluno</h4>${regs.length?regs.map(r=>`<div class="mini-card" data-modal-registro="${r.id}"><strong>${escapeHtml(formatDateBR(r.DATA)||'')}</strong> — ${escapeHtml(r['CONTROLE DIÁRIO']||'Registro')}<br><span>${escapeHtml(r['DESCREVA O OCORRIDO']||r['DESCREVA O RECONHECIMENTO']||r['MOTIVO']||'Clique para abrir')}</span></div>`).join(''):'<p>Nenhum registro encontrado para este aluno.</p>'}`; abrirModal(); $$('[data-modal-registro]').forEach(el=>el.onclick=()=>abrirRegistro(el.dataset.modalRegistro)); }
-function abrirRegistro(id){ const r=state.historico.find(x=>x.id===id); if(!r) return; $('#modalTitle').textContent='Detalhes do registro'; const aluno=state.alunos.find(a=>a.id===r.alunoId); const podeApagar=labelRole()==='admin'; $('#modalBody').innerHTML=`<h3>${escapeHtml(r.ALUNO||'')}</h3><p class="muted">${escapeHtml(r.TURMA||'')} • ${escapeHtml(formatDateBR(r.DATA)||'')} • Registrado por: ${escapeHtml(registroAutorDisplay(r))}</p><div class="badges"><span class="badge">${escapeHtml(r['CONTROLE DIÁRIO']||'Registro')}</span><span class="badge">${escapeHtml(r.statusEmail||'sem status')}</span>${r.emailPedagogia?`<span class="badge">Pedagogia: ${escapeHtml(r.emailPedagogia)}</span>`:''}</div>${podeApagar?`<div class="actions"><button type="button" class="danger" id="apagarRegistroBtn" data-id="${escapeHtml(r.id)}">Apagar registro</button></div>`:''}<h4>Informações do registro</h4>${keyValuesTable(r)}<h4>Texto automático do e-mail</h4><pre class="email-preview">${escapeHtml(r.textoEmail||textoEmailAutomatico(r))}</pre>${aluno?`<h4>Dados do aluno na planilha SQL</h4>${keyValuesTable(aluno.dadosCompletos||aluno)}`:''}`; abrirModal(); const btn=$('#apagarRegistroBtn'); if(btn) btn.onclick=()=>apagarRegistro(btn.dataset.id); }
+function abrirRegistro(id){ const r=state.historico.find(x=>x.id===id); if(!r) return; $('#modalTitle').textContent='Detalhes do registro'; const aluno=state.alunos.find(a=>a.id===r.alunoId); const podeApagar=labelRole()==='admin'; $('#modalBody').innerHTML=`<h3>${escapeHtml(r.ALUNO||'')}</h3><p class="muted">${escapeHtml(r.TURMA||'')} • ${escapeHtml(formatDateBR(r.DATA)||'')} • Registrado por: ${escapeHtml(registroAutorDisplay(r))}</p><div class="badges"><span class="badge">${escapeHtml(r['CONTROLE DIÁRIO']||'Registro')}</span>${r.origem==='professor'?'<span class="badge">Sem envio de e-mail</span>':`<span class="badge">${escapeHtml(r.statusEmail||'sem status')}</span>`}${r.emailPedagogia?`<span class="badge">Pedagogia: ${escapeHtml(r.emailPedagogia)}</span>`:''}</div>${podeApagar?`<div class="actions"><button type="button" class="danger" id="apagarRegistroBtn" data-id="${escapeHtml(r.id)}">Apagar registro</button></div>`:''}<h4>Informações do registro</h4>${keyValuesTable(r)}<h4>Texto automático do e-mail</h4><pre class="email-preview">${escapeHtml(r.textoEmail||textoEmailAutomatico(r))}</pre>${aluno?`<h4>Dados do aluno na planilha SQL</h4>${keyValuesTable(aluno.dadosCompletos||aluno)}`:''}`; abrirModal(); const btn=$('#apagarRegistroBtn'); if(btn) btn.onclick=()=>apagarRegistro(btn.dataset.id); }
 async function apagarRegistro(id){
   if(labelRole()!=='admin'){ toast('Apenas administradores podem apagar registros.','error'); return; }
   if(!confirm('Deseja realmente apagar este registro?')) return;
@@ -381,7 +436,7 @@ async function limparBancoDados(){
   state.alunos=[]; state.historico=[]; renderAlunos(); renderHistorico();
 }
 function exportarCsv(){ const rows=state.historico; if(!rows.length){toast('Nada para exportar.','error');return;} const cols=[...new Set(rows.flatMap(r=>Object.keys(r)))]; const csv=[cols.join(';'),...rows.map(r=>cols.map(c=>`"${String(r[c]??'').replace(/"/g,'""')}"`).join(';'))].join('\n'); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download='registro-diario-ocorrencias.csv'; a.click(); }
-function trocarPagina(p){ $$('.nav').forEach(b=>b.classList.toggle('active',b.dataset.page===p)); $$('.page').forEach(s=>s.classList.toggle('active',s.id===`page-${p}`)); $('#pageTitle').textContent={novo:'Novo registro',historico:'Histórico',alunos:'Alunos',admin:'Admin'}[p]||'Registro'; $('.sidebar').classList.remove('open'); if(p==='historico') atualizarHistorico(); if(p==='alunos') renderAlunos(); if(p==='admin') carregarUsuarios(); }
+function trocarPagina(p){ $$('.nav').forEach(b=>b.classList.toggle('active',b.dataset.page===p)); $$('.page').forEach(s=>s.classList.toggle('active',s.id===`page-${p}`)); $('#pageTitle').textContent={novo:'Novo registro',professor:'Registro professor',historico:'Histórico',alunos:'Alunos',admin:'Admin'}[p]||'Registro'; $('.sidebar').classList.remove('open'); if(p==='historico') atualizarHistorico(); if(p==='alunos') renderAlunos(); if(p==='admin') carregarUsuarios(); }
 async function carregarUsuarios(){
   if(labelRole()!=='admin') return;
   const snap = await getDocs(collection(db,colecoes.usuarios));
@@ -415,5 +470,5 @@ async function criarUsuarioAdmin(ev){
 
 $('#loginForm').addEventListener('submit',async e=>{ e.preventDefault(); try{ await signInWithEmailAndPassword(auth,$('#loginEmail').value,$('#loginPassword').value); }catch(err){toast('Erro no login: '+err.message,'error')} });
 $('#logoutBtn').onclick=()=>signOut(auth); $('#menuBtn').onclick=()=>$('.sidebar').classList.toggle('open'); $$('.nav').forEach(b=>b.onclick=()=>trocarPagina(b.dataset.page));
-$('#turmaSelect').onchange=preencherAlunos; $('#alunoSelect').onchange=atualizarResponsaveis; $('#registroForm').onsubmit=salvarRegistro; $('#limparForm').onclick=()=>{ $('#registroForm').reset(); renderControleSection(); }; $('#aplicarFiltros').onclick=renderHistorico; $('#exportarCsv').onclick=exportarCsv; $('#salvarAluno').onclick=salvarAluno; $('#importarAlunos').onclick=importarAlunos; $('#importarHistorico').onclick=importarHistorico; $('#importarAlunosArquivo').onclick=importarAlunosArquivo; $('#importarHistoricoArquivo').onclick=importarHistoricoArquivo; $('#adminUserForm').addEventListener('submit',criarUsuarioAdmin); $('#salvarConfig').onclick=salvarConfig; $('#limparBanco').onclick=limparBancoDados; $('#modalClose').onclick=fecharModal; $('#modalBackdrop').onclick=fecharModal;
+$('#turmaSelect').onchange=preencherAlunos; $('#alunoSelect').onchange=atualizarResponsaveis; if($('#profTurmaSelect')) $('#profTurmaSelect').onchange=preencherAlunosProfessor; if($('#profAlunoSelect')) $('#profAlunoSelect').onchange=atualizarAlunoProfessor; $('#registroForm').onsubmit=salvarRegistro; if($('#professorForm')) $('#professorForm').onsubmit=salvarRegistroProfessor; $('#limparForm').onclick=()=>{ $('#registroForm').reset(); renderControleSection(); }; if($('#limparProfessorForm')) $('#limparProfessorForm').onclick=()=>{ $('#professorForm').reset(); const pn=$('#professorNome'); if(pn) pn.value=state.profile.nome || state.user.email; }; $('#aplicarFiltros').onclick=renderHistorico; $('#exportarCsv').onclick=exportarCsv; $('#salvarAluno').onclick=salvarAluno; $('#importarAlunos').onclick=importarAlunos; $('#importarHistorico').onclick=importarHistorico; $('#importarAlunosArquivo').onclick=importarAlunosArquivo; $('#importarHistoricoArquivo').onclick=importarHistoricoArquivo; $('#adminUserForm').addEventListener('submit',criarUsuarioAdmin); $('#salvarConfig').onclick=salvarConfig; $('#limparBanco').onclick=limparBancoDados; $('#modalClose').onclick=fecharModal; $('#modalBackdrop').onclick=fecharModal;
 onAuthStateChanged(auth,async user=>{ state.user=user; $('#loginScreen').classList.toggle('hidden',!!user); $('#app').classList.toggle('hidden',!user); if(user){ await init(); await carregarPerfil(); await carregarConfig(); await carregarAlunos(); await atualizarHistorico(); } });

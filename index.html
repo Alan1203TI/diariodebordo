@@ -28,6 +28,7 @@
     <aside class="sidebar">
       <div class="logo"><img src="assets/logosesi.png" alt="SESI"><span>Registro<br><strong>Diário</strong></span></div>
       <button class="nav active" data-page="novo">Novo registro</button>
+      <button class="nav teacher-only" data-page="professor">Registro professor</button>
       <button class="nav" data-page="historico">Histórico</button>
       <button class="nav admin-only" data-page="alunos">Alunos</button>
       <button class="nav admin-only" data-page="admin">Admin</button>
@@ -70,6 +71,54 @@
         </form>
       </section>
 
+      <section id="page-professor" class="page">
+        <div class="hero-card professor-hero">
+          <div class="hero-overlay">
+            <img src="assets/logosesi.png" alt="SESI" class="hero-logo">
+            <div><h1>Registro de Ocorrência do Professor</h1><p>Registro interno de sala de aula • sem envio de e-mail aos responsáveis</p></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Identificação do aluno</h3>
+          <div class="grid three">
+            <div><label>Turma</label><select id="profTurmaSelect"><option value="">Selecione</option></select></div>
+            <div><label>Aluno</label><select id="profAlunoSelect"><option value="">Selecione a turma</option></select></div>
+            <div><label>Data do registro</label><input id="profDataRegistro" type="date" /></div>
+          </div>
+          <div id="profAlunoBox" class="info-box">Selecione o aluno para visualizar os dados completos.</div>
+        </div>
+
+        <form id="professorForm" class="card professor-card">
+          <h3>Ocorrência registrada pelo professor</h3>
+          <p class="muted">Este registro será salvo apenas no histórico do aluno e <strong>não enviará e-mail</strong> para os responsáveis.</p>
+          <div class="grid two">
+            <div><label>Professor</label><input id="professorNome" name="PROFESSOR" placeholder="Nome do professor" /></div>
+            <div><label>Disciplina</label><select name="DISCIPLINA" required><option value="">Selecionar</option><option>MATEMÁTICA</option><option>PORTUGUÊS</option><option>HISTÓRIA</option><option>GEOGRAFIA</option><option>CIÊNCIAS</option><option>PRODUÇÃO DE TEXTO</option><option>LITERATURA</option><option>ARTE</option><option>INGLÊS</option><option>EDUCAÇÃO FÍSICA</option><option>Outra</option></select></div>
+            <div><label>Horário / aula</label><select name="HORÁRIO/AULA" required><option value="">Selecionar</option><option>1º horário</option><option>2º horário</option><option>3º horário</option><option>4º horário</option><option>5º horário</option><option>6º horário</option><option>Outra</option></select></div>
+            <div><label>Data da ocorrência</label><input name="DATA DA OCORRÊNCIA" type="date" /></div>
+            <div class="full"><label>Item de referência da ocorrência</label><select name="ITEM DE REFERÊNCIA" required>
+              <option value="">Selecionar</option>
+              <option>1 - CONVERSA PARALELA</option>
+              <option>2 - POSTURA</option>
+              <option>3 - DESRESPEITO</option>
+              <option>4 - PORTA</option>
+              <option>5 - CABEÇA BAIXA</option>
+              <option>6 - MERENDA EM SALA</option>
+              <option>7 - COMPORTAMENTO INADEQUADO</option>
+              <option>8 - FORA DO MAPA</option>
+              <option>9 - SEM FAZER ATIVIDADES</option>
+            </select></div>
+            <div class="full"><label>Descrição da ocorrência</label><textarea name="DESCRIÇÃO DA OCORRÊNCIA" required placeholder="Descreva o ocorrido dentro de sala"></textarea></div>
+            <div class="full"><label>Providência tomada em sala</label><textarea name="PROVIDÊNCIA DO PROFESSOR" placeholder="Ex.: conversa com o aluno, mudança de lugar, orientação, encaminhamento ao disciplinário..."></textarea></div>
+          </div>
+          <div class="actions">
+            <button type="submit">Salvar registro do professor</button>
+            <button type="button" id="limparProfessorForm" class="secondary">Limpar</button>
+          </div>
+        </form>
+      </section>
+
       <section id="page-historico" class="page">
         <div class="card">
           <div class="grid four">
@@ -108,7 +157,7 @@
             <div><label>Nome</label><input id="adminUserNome" required placeholder="Nome do usuário" /></div>
             <div><label>E-mail</label><input id="adminUserEmail" type="email" required placeholder="email@escola.com" /></div>
             <div><label>Senha</label><input id="adminUserSenha" type="password" required minlength="6" placeholder="mínimo 6 caracteres" /></div>
-            <div><label>Perfil</label><select id="adminUserPerfil"><option value="disciplinario">Disciplinário</option><option value="pedagogia">Pedagogia</option><option value="admin">Administrador</option></select></div>
+            <div><label>Perfil</label><select id="adminUserPerfil"><option value="disciplinario">Disciplinário</option><option value="professor">Professor</option><option value="pedagogia">Pedagogia</option><option value="admin">Administrador</option></select></div>
             <div class="full"><button type="submit">Criar usuário</button></div>
           </form>
           <div id="listaUsuarios" class="list compact admin-users"></div>
