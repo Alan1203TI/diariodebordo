@@ -292,7 +292,15 @@ async function salvarConfig(){ await setDoc(doc(db,colecoes.config,'geral'),{ema
 async function carregarPerfil(){
   const ref=doc(db,colecoes.usuarios,state.user.uid);
   const s=await getDoc(ref);
-  if(s.exists()) state.profile=s.data(); else { state.profile={nome:state.user.email, email:state.user.email, role:'disciplinario', ativo:true}; await setDoc(ref,{...state.profile,createdAt:serverTimestamp()},{merge:true}); }
+  if(s.exists()){
+    state.profile=s.data();
+  }else{
+    // Usuário existe no Authentication, mas foi removido/desautorizado no sistema.
+    state.profile={role:'bloqueado', ativo:false};
+    toast('Usuário não autorizado ou removido pelo administrador.','error');
+    await signOut(auth);
+    return;
+  }
   if(state.profile.ativo===false){ toast('Usuário desativado. Procure o administrador.','error'); await signOut(auth); return; }
   $('#userLabel').textContent=usuarioDisplay();
   controlarModalSenha();
@@ -434,11 +442,42 @@ async function salvarRegistroProfessor(ev){ if(!['admin','professor'].includes(l
   atualizarHistorico();
 }
 
-async function atualizarHistorico(){ const snap=await getDocs(query(collection(db,colecoes.ocorrencias), orderBy('createdAtLocal','desc'), limit(500))); state.historico=snap.docs.map(d=>({id:d.id,...d.data()})); renderHistorico(); const sr=$('#statRegistros'); if(sr) sr.textContent=state.historico.length; const se=$('#statEmails'); if(se) se.textContent=state.historico.filter(r=>['pendente','enviado-cloud','enviado-emailjs'].includes(r.statusEmail)).length; }
+async function atualizarHistorico(){ const snap=await getDocs(query(collection(db,colecoes.ocorrencias), orderBy('createdAtLocal','desc'), limit(5000))); state.historico=snap.docs.map(d=>({id:d.id,...d.data()})); renderHistorico(); const sr=$('#statRegistros'); if(sr) sr.textContent=state.historico.length; const se=$('#statEmails'); if(se) se.textContent=state.historico.filter(r=>['pendente','enviado-cloud','enviado-emailjs'].includes(r.statusEmail)).length; }
 function renderHistorico(){ const busca=$('#filtroBusca').value.toLowerCase(), turma=$('#filtroTurma').value, ini=$('#filtroInicio').value, fim=$('#filtroFim').value; let lista=state.historico.filter(r=>(!turma||r.TURMA===turma)&&(!ini||r.DATA>=ini)&&(!fim||r.DATA<=fim)); if(busca) lista=lista.filter(r=>JSON.stringify(r).toLowerCase().includes(busca)); $('#listaHistorico').innerHTML=lista.map(r=>`<article class="item clickable" data-registro="${r.id}"><h4>${escapeHtml(r.ALUNO||'')}</h4><p><strong>Turma:</strong> ${escapeHtml(r.TURMA||'')} • <strong>Data:</strong> ${escapeHtml(formatDateBR(r.DATA)||'')} • <strong>Registrado por:</strong> ${escapeHtml(registroAutorDisplay(r))}</p><p>${escapeHtml(r['DESCREVA O OCORRIDO']||r['DESCREVA O RECONHECIMENTO']||r['MOTIVO']||r['SINTOMAS']||'Clique para ver todas as informações do registro.')}</p><div class="badges"><span class="badge">${escapeHtml(r['CONTROLE DIÁRIO']||'Registro')}</span>${r.origem==='professor'?'<span class="badge">Registro professor</span>':`<span class="badge">E-mail: ${escapeHtml(r.statusEmail||'não informado')}</span>`}</div></article>`).join('') || '<div class="card">Nenhum registro encontrado.</div>'; $$('[data-registro]').forEach(el=>el.onclick=()=>abrirRegistro(el.dataset.registro)); }
 function renderAlunos(){ $('#listaAlunos').innerHTML=state.alunos.slice(0,700).map(a=>`<div class="item clickable" data-aluno="${a.id}"><h4>${escapeHtml(a.nome)}</h4><p>${escapeHtml(a.turma||'')}</p><p>${emailsDoAluno(a).map(escapeHtml).join(', ')||'Sem e-mail cadastrado'}</p><div class="badges"><span class="badge">Ver aba completa</span></div></div>`).join(''); $$('[data-aluno]').forEach(el=>el.onclick=()=>abrirAluno(el.dataset.aluno)); }
 function keyValuesTable(obj){ const rows=Object.entries(obj||{}).filter(([k,v])=>!['id','dadosCompletos'].includes(k)&&v!==undefined&&v!==null&&String(v).trim()!=='' ); return `<div class="detail-grid">${rows.map(([k,v])=>`<div><strong>${escapeHtml(k)}</strong><span>${escapeHtml(v)}</span></div>`).join('')}</div>`; }
-function abrirAluno(id){ const a=state.alunos.find(x=>x.id===id); if(!a) return; state.alunoAberto=a; const regs=state.historico.filter(r=>r.alunoId===id || (r.ALUNO===a.nome && r.TURMA===a.turma)); $('#modalTitle').textContent='Aba do aluno'; $('#modalBody').innerHTML=`<h3>${escapeHtml(a.nome)}</h3><p class="muted">${escapeHtml(a.turma||'')} • ${emailsDoAluno(a).map(escapeHtml).join(', ')||'Sem e-mail cadastrado'}</p><h4>Informações completas da planilha SQL</h4>${keyValuesTable(a.dadosCompletos||a)}<h4>Registros deste aluno</h4>${regs.length?regs.map(r=>`<div class="mini-card" data-modal-registro="${r.id}"><strong>${escapeHtml(formatDateBR(r.DATA)||'')}</strong> — ${escapeHtml(r['CONTROLE DIÁRIO']||'Registro')}<br><span>${escapeHtml(r['DESCREVA O OCORRIDO']||r['DESCREVA O RECONHECIMENTO']||r['MOTIVO']||'Clique para abrir')}</span></div>`).join(''):'<p>Nenhum registro encontrado para este aluno.</p>'}`; abrirModal(); $$('[data-modal-registro]').forEach(el=>el.onclick=()=>abrirRegistro(el.dataset.modalRegistro)); }
+function canon(v=''){ return norm(v).replace(/[^a-z0-9]/g,''); }
+function alunoNomeCandidatos(a={}){
+  const d=a.dadosCompletos||{};
+  return [a.nome,a.ALUNO,a.NOME,a['NOME DO ALUNO'],a['ALUNO NOME'],d.ALUNO,d.NOME,d['NOME DO ALUNO'],d['ALUNO NOME']].filter(Boolean).map(canon);
+}
+function alunoTurmaCandidatos(a={}){
+  const d=a.dadosCompletos||{};
+  return [a.turma,a.TURMA,a['CODIGO TURMA'],a['CÓDIGO TURMA'],d.TURMA,d['CODIGO TURMA'],d['CÓDIGO TURMA']].filter(Boolean).map(canon);
+}
+function alunoRaCandidatos(a={}){
+  const d=a.dadosCompletos||{};
+  return [a.raAluno,a.RA,a['RA ALUNO'],a['MATRÍCULA'],a.MATRICULA,d.RA,d['RA ALUNO'],d['MATRÍCULA'],d.MATRICULA].filter(Boolean).map(canon);
+}
+function registroAlunoCandidatos(r={}){
+  return [r.ALUNO,r.NOME,r['NOME DO ALUNO'],r['ALUNO NOME'],r.alunoNome,r.aluno_nome,r.alunoDados?.nome,r.alunoDados?.ALUNO,r.alunoDados?.NOME,r.alunoDados?.['NOME DO ALUNO'],r.alunoDados?.['ALUNO NOME']].filter(Boolean).map(canon);
+}
+function registroTurmaCandidatos(r={}){
+  return [r.TURMA,r['CODIGO TURMA'],r['CÓDIGO TURMA'],r.turma,r.alunoDados?.turma,r.alunoDados?.TURMA,r.alunoDados?.['CODIGO TURMA'],r.alunoDados?.['CÓDIGO TURMA']].filter(Boolean).map(canon);
+}
+function registroRaCandidatos(r={}){
+  return [r.raAluno,r.RA,r['RA ALUNO'],r['MATRÍCULA'],r.MATRICULA,r.alunoDados?.raAluno,r.alunoDados?.RA,r.alunoDados?.['RA ALUNO'],r.alunoDados?.['MATRÍCULA'],r.alunoDados?.MATRICULA].filter(Boolean).map(canon);
+}
+function pertenceAoAluno(registro={}, aluno={}){
+  if(registro.alunoId && registro.alunoId===aluno.id) return true;
+  const raAluno=alunoRaCandidatos(aluno), raReg=registroRaCandidatos(registro);
+  if(raAluno.length && raReg.some(x=>raAluno.includes(x))) return true;
+  const nomes=alunoNomeCandidatos(aluno), nomesReg=registroAlunoCandidatos(registro);
+  if(!nomes.length || !nomesReg.some(x=>nomes.includes(x))) return false;
+  const turmas=alunoTurmaCandidatos(aluno), turmasReg=registroTurmaCandidatos(registro);
+  return !turmas.length || !turmasReg.length || turmasReg.some(x=>turmas.includes(x));
+}
+function abrirAluno(id){ const a=state.alunos.find(x=>x.id===id); if(!a) return; state.alunoAberto=a; const regs=state.historico.filter(r=>pertenceAoAluno(r,a)); $('#modalTitle').textContent='Aba do aluno'; $('#modalBody').innerHTML=`<h3>${escapeHtml(a.nome)}</h3><p class="muted">${escapeHtml(a.turma||'')} • ${emailsDoAluno(a).map(escapeHtml).join(', ')||'Sem e-mail cadastrado'}</p><h4>Informações completas da planilha SQL</h4>${keyValuesTable(a.dadosCompletos||a)}<h4>Registros deste aluno</h4>${regs.length?regs.map(r=>`<div class="mini-card" data-modal-registro="${r.id}"><strong>${escapeHtml(formatDateBR(r.DATA)||'')}</strong> — ${escapeHtml(r['CONTROLE DIÁRIO']||'Registro')}<br><span>${escapeHtml(r['DESCREVA O OCORRIDO']||r['DESCREVA O RECONHECIMENTO']||r['MOTIVO']||'Clique para abrir')}</span></div>`).join(''):'<p>Nenhum registro encontrado para este aluno.</p>'}`; abrirModal(); $$('[data-modal-registro]').forEach(el=>el.onclick=()=>abrirRegistro(el.dataset.modalRegistro)); }
 function abrirRegistro(id){ const r=state.historico.find(x=>x.id===id); if(!r) return; $('#modalTitle').textContent='Detalhes do registro'; const aluno=state.alunos.find(a=>a.id===r.alunoId); const podeApagar=labelRole()==='admin'; $('#modalBody').innerHTML=`<h3>${escapeHtml(r.ALUNO||'')}</h3><p class="muted">${escapeHtml(r.TURMA||'')} • ${escapeHtml(formatDateBR(r.DATA)||'')} • Registrado por: ${escapeHtml(registroAutorDisplay(r))}</p><div class="badges"><span class="badge">${escapeHtml(r['CONTROLE DIÁRIO']||'Registro')}</span>${r.origem==='professor'?'<span class="badge">Sem envio de e-mail</span>':`<span class="badge">${escapeHtml(r.statusEmail||'sem status')}</span>`}${r.emailPedagogia?`<span class="badge">Pedagogia: ${escapeHtml(r.emailPedagogia)}</span>`:''}</div>${podeApagar?`<div class="actions"><button type="button" class="danger" id="apagarRegistroBtn" data-id="${escapeHtml(r.id)}">Apagar registro</button></div>`:''}<h4>Informações do registro</h4>${keyValuesTable(r)}<h4>Texto automático do e-mail</h4><pre class="email-preview">${escapeHtml(r.textoEmail||textoEmailAutomatico(r))}</pre>${aluno?`<h4>Dados do aluno na planilha SQL</h4>${keyValuesTable(aluno.dadosCompletos||aluno)}`:''}`; abrirModal(); const btn=$('#apagarRegistroBtn'); if(btn) btn.onclick=()=>apagarRegistro(btn.dataset.id); }
 async function apagarRegistro(id){
   if(labelRole()!=='admin'){ toast('Apenas administradores podem apagar registros.','error'); return; }
@@ -519,7 +558,24 @@ async function carregarUsuarios(){
   const snap = await getDocs(collection(db,colecoes.usuarios));
   state.allUsuarios = snap.docs.map(d=>({id:d.id,...d.data()}));
   const box = $('#listaUsuarios');
-  if(box) box.innerHTML = state.allUsuarios.map(u=>`<div class="item"><h4>${escapeHtml(u.nome||u.email||'Usuário')}</h4><p>${escapeHtml(u.email||'')} • ${escapeHtml(u.role||u.perfil||'disciplinario')} • ${u.ativo===false?'inativo':'ativo'}${(u.trocarSenhaObrigatoria||u.senhaInicial)?' • troca de senha pendente':''}</p></div>`).join('') || '<p class="muted">Nenhum usuário listado.</p>';
+  if(box){
+    box.innerHTML = state.allUsuarios.map(u=>`<div class="item"><h4>${escapeHtml(u.nome||u.email||'Usuário')}</h4><p>${escapeHtml(u.email||'')} • ${escapeHtml(u.role||u.perfil||'disciplinario')} • ${u.ativo===false?'inativo':'ativo'}${(u.trocarSenhaObrigatoria||u.senhaInicial)?' • troca de senha pendente':''}</p><div class="actions">${u.id===state.user.uid?'<span class="muted">Usuário atual</span>':`<button type="button" class="danger mini" data-delete-user="${escapeHtml(u.id)}">Deletar usuário</button>`}</div></div>`).join('') || '<p class="muted">Nenhum usuário listado.</p>';
+    $$('[data-delete-user]').forEach(btn=>btn.onclick=()=>deletarUsuario(btn.dataset.deleteUser));
+  }
+}
+async function deletarUsuario(uid){
+  if(labelRole()!=='admin'){ toast('Apenas administradores podem deletar usuários.','error'); return; }
+  if(uid===state.user.uid){ toast('Você não pode deletar seu próprio usuário logado.','error'); return; }
+  const u=state.allUsuarios.find(x=>x.id===uid) || {};
+  if(!confirm(`Deseja realmente deletar o usuário ${u.nome||u.email||uid}?
+
+Ele será removido do acesso ao sistema.`)) return;
+  try{
+    await deleteDoc(doc(db,colecoes.usuarios,uid));
+    state.allUsuarios=state.allUsuarios.filter(x=>x.id!==uid);
+    await carregarUsuarios();
+    toast('Usuário deletado do sistema.');
+  }catch(err){ toast('Erro ao deletar usuário: '+(err?.message||err),'error'); }
 }
 async function criarUsuarioAdmin(ev){
   ev.preventDefault();
