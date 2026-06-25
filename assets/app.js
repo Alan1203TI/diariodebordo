@@ -251,8 +251,18 @@ function toISODate(v){
   if(!raw) return '';
   const iso=raw.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
   if(iso){ const y=iso[1], m=iso[2].padStart(2,'0'), d=iso[3].padStart(2,'0'); return `${y}-${m}-${d}`; }
-  const br=raw.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})/);
-  if(br){ let y=br[3]; if(y.length===2) y='20'+y; const m=br[2].padStart(2,'0'), d=br[1].padStart(2,'0'); return `${y}-${m}-${d}`; }
+  const parts=raw.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})/);
+  if(parts){
+    let a=Number(parts[1]), b=Number(parts[2]), y=parts[3];
+    if(y.length===2) y='20'+y;
+    let d=a, m=b;
+    // Histórico importado do Excel às vezes vem em padrão americano mm/dd/aaaa.
+    // Se a segunda parte for maior que 12, interpretamos como mm/dd/aaaa.
+    if(b>12 && a<=12){ m=a; d=b; }
+    // Se a primeira parte for maior que 12, mantemos dd/mm/aaaa.
+    if(m<1 || m>12 || d<1 || d>31) return '';
+    return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  }
   const dt=new Date(raw);
   if(!isNaN(dt)) return dt.toISOString().slice(0,10);
   return '';
@@ -599,20 +609,14 @@ function mesRegistro(r){
   const [y,m]=d.split('-'); return `${m}/${y}`;
 }
 function corIndicador(label=''){
-  const n=norm(label);
-  if(n.includes('reconhecimento') || n.includes('bom') || n.includes('positivo') || n.includes('destaque')) return '#16a34a';
-  if(n.includes('grave') || n.includes('suspens') || n.includes('advert') || n.includes('desrespeito') || n.includes('comportamento inadequado')) return '#dc2626';
-  if(n.includes('medio') || n.includes('saude') || n.includes('febre') || n.includes('atendimento')) return '#f97316';
-  if(n.includes('atras') || n.includes('uniforme') || n.includes('tarefa') || n.includes('livro') || n.includes('sem fazer')) return '#eab308';
-  if(n.includes('professor') || n.includes('conversa') || n.includes('postura')) return '#2563eb';
-  return '#0ea5e9';
+  return '#004a98';
 }
 function chartBars(elId, data, maxItems=10){
   const el=$('#'+elId); if(!el) return;
   const rows=(data||[]).slice(0,maxItems);
   if(!rows.length){ el.innerHTML='<p class="muted">Sem dados para exibir.</p>'; return; }
   const max=Math.max(...rows.map(r=>r.value),1);
-  el.innerHTML=rows.map(r=>`<div class="bar-row"><span class="bar-label" title="${escapeHtml(r.label)}">${escapeHtml(r.label)}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.max(4,(r.value/max)*100)}%;background:${corIndicador(r.label)}"></div></div><strong>${r.value}</strong></div>`).join('');
+  el.innerHTML=rows.map(r=>`<div class="bar-row"><span class="bar-label" title="${escapeHtml(r.label)}">${escapeHtml(r.label)}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.max(4,(r.value/max)*100)}%"></div></div><strong>${r.value}</strong></div>`).join('');
 }
 function chartTimeline(elId, data){
   const el=$('#'+elId); if(!el) return;
@@ -628,6 +632,13 @@ function preencherDashboardTurmas(){
   turmas().forEach(t=>sel.insertAdjacentHTML('beforeend',`<option>${escapeHtml(t)}</option>`));
   sel.value=old;
 }
+function abrirHistoricoAlunoDashboard(nome,turma){
+  trocarPagina('historico');
+  if($('#filtroBusca')) $('#filtroBusca').value = nome || '';
+  if($('#filtroTurma')) $('#filtroTurma').value = turma || '';
+  renderHistorico();
+}
+
 function renderDashboard(){
   if(!$('#page-dashboard')) return;
   if(!canAccessPage('dashboard')) return;
@@ -665,9 +676,10 @@ function renderDashboard(){
       const regs=lista.filter(r=>(r.ALUNO||'')===a.label).sort((x,y)=>String(dataRegistroKey(y)).localeCompare(String(dataRegistroKey(x))));
       const ultimo=regs[0]||{};
       const tipo=contarPor(regs,r=>r['CONTROLE DIÁRIO']||r.tipoRegistro||'Registro')[0]?.label||'-';
-      return `<tr><td>${escapeHtml(a.label)}</td><td>${escapeHtml(ultimo.TURMA||'-')}</td><td>${a.value}</td><td>${escapeHtml(tipo)}</td><td>${escapeHtml(formatDateBR(dataRegistroKey(ultimo))||'-')}</td></tr>`;
+      return `<tr><td>${escapeHtml(a.label)}</td><td>${escapeHtml(ultimo.TURMA||'-')}</td><td>${a.value}</td><td>${escapeHtml(tipo)}</td><td>${escapeHtml(formatDateBR(dataRegistroKey(ultimo))||'-')}</td><td><button type="button" class="mini dash-ver-registros" data-aluno="${escapeHtml(a.label)}" data-turma="${escapeHtml(ultimo.TURMA||'')}">Ver registros</button></td></tr>`;
     }).join('');
-    table.innerHTML=`<table class="dash-table"><thead><tr><th>Aluno</th><th>Turma</th><th>Total</th><th>Tipo mais frequente</th><th>Último registro</th></tr></thead><tbody>${rows||'<tr><td colspan="5">Sem dados.</td></tr>'}</tbody></table>`;
+    table.innerHTML=`<table class="dash-table"><thead><tr><th>Aluno</th><th>Turma</th><th>Total</th><th>Tipo mais frequente</th><th>Último registro</th><th>Ação</th></tr></thead><tbody>${rows||'<tr><td colspan="6">Sem dados.</td></tr>'}</tbody></table>`;
+    $$('.dash-ver-registros').forEach(btn=>btn.onclick=()=>abrirHistoricoAlunoDashboard(btn.dataset.aluno, btn.dataset.turma));
   }
 }
 
@@ -782,7 +794,7 @@ function aplicarMascaraDataBR(input){
     input.value=v;
   });
 }
-function aplicarMascarasData(){ ['#dataRegistro','#profDataRegistro','#dashInicio','#dashFim','#filtroInicio','#filtroFim','input[name="DATA DA OCORRÊNCIA"]'].forEach(sel=>document.querySelectorAll(sel).forEach(aplicarMascaraDataBR)); }
+function aplicarMascarasData(){ ['#dataRegistro','#profDataRegistro','#filtroInicio','#filtroFim','input[name="DATA DA OCORRÊNCIA"]'].forEach(sel=>document.querySelectorAll(sel).forEach(aplicarMascaraDataBR)); }
 
 function paginaInicialPorPerfil(){
   if(canAccessPage('dashboard')) return 'dashboard';
