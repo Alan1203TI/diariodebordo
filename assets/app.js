@@ -191,14 +191,44 @@ async function salvarRegistro(ev){ ev.preventDefault(); const aluno=alunoSelecio
   $('#registroForm').reset(); renderControleSection(); atualizarHistorico();
 }
 async function tentarEmailJs(registro,id){
-  if(!emailJsConfig.enabled || !window.emailjs || !registro.emailsResponsaveis?.length) return;
+  if(!emailJsConfig.enabled || !window.emailjs){
+    await setDoc(doc(db,colecoes.ocorrencias,id),{statusEmail:'emailjs-desativado'},{merge:true});
+    return;
+  }
+  const destinatarios=(registro.emailsResponsaveis||[]).map(e=>String(e||'').trim()).filter(e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
+  if(!destinatarios.length){
+    await setDoc(doc(db,colecoes.ocorrencias,id),{statusEmail:'sem-email-mae',emailErro:'Aluno sem E-MAIL MÃE válido.'},{merge:true});
+    return;
+  }
+  const detalhes = resumoCampos(registro) || registro.textoEmail || 'Registro diário sem detalhes adicionais.';
+  const observacoes = registro['PROVIDÊNCIA'] || registro['CONTATO COM RESPONSÁVEIS'] || registro['COMUNICADO À FAMÍLIA'] || registro['SANÇÕES'] || '';
+  const params={
+    // Variáveis usadas no template do EmailJS
+    to_email: destinatarios[0],
+    reply_to: state.user?.email || 'naoresponder@sesi.local',
+    name: 'SESI Dom Bosco',
+    aluno_nome: registro.ALUNO || '',
+    turma: registro.TURMA || '',
+    controle_diario: registro['CONTROLE DIÁRIO'] || 'Registro diário',
+    data_registro: formatDateBR(registro.DATA) || registro.DATA || '',
+    detalhes_registro: detalhes,
+    observacoes: observacoes,
+    registrado_por: registro.disciplinario || state.user?.email || '',
+    // Variáveis extras para compatibilidade com modelos padrão do EmailJS
+    email: state.user?.email || 'naoresponder@sesi.local',
+    message: registro.textoEmail || detalhes,
+    subject: `Registro Diário - ${registro.ALUNO || ''} - ${registro['CONTROLE DIÁRIO'] || ''}`
+  };
   try{
-    emailjs.init({publicKey: emailJsConfig.publicKey});
-    await emailjs.send(emailJsConfig.serviceId,emailJsConfig.templateId,{
-      to_email:registro.emailsResponsaveis.join(','), cc_email:registro.emailCopia||'', aluno_nome:registro.ALUNO, turma:registro.TURMA, controle_diario:registro['CONTROLE DIÁRIO']||'', data_registro:formatDateBR(registro.DATA), detalhes_registro:registro['DESCREVA O OCORRIDO']||registro['DESCREVA O RECONHECIMENTO']||'', observacoes:registro['PROVIDÊNCIA']||'', registrado_por:registro.disciplinario, reply_to:(state.user?.email||'')
-    });
-    await setDoc(doc(db,colecoes.ocorrencias,id),{statusEmail:'enviado-emailjs',emailSentAt:serverTimestamp()},{merge:true});
-  }catch(e){ console.error(e); await setDoc(doc(db,colecoes.ocorrencias,id),{statusEmail:'erro-emailjs',emailErro:String(e?.text||e?.message||e)},{merge:true}); }
+    console.log('EmailJS params', params);
+    await emailjs.send(emailJsConfig.serviceId,emailJsConfig.templateId,params,{publicKey:emailJsConfig.publicKey});
+    await setDoc(doc(db,colecoes.ocorrencias,id),{statusEmail:'enviado-emailjs',emailSentAt:serverTimestamp(),emailDestino:params.to_email},{merge:true});
+  }catch(e){
+    const erro = e?.text || e?.message || JSON.stringify(e) || String(e);
+    console.error('Erro EmailJS:', e, 'Params:', params);
+    await setDoc(doc(db,colecoes.ocorrencias,id),{statusEmail:'erro-emailjs',emailErro:erro,emailDestino:params.to_email},{merge:true});
+    toast('Erro ao enviar e-mail: '+erro,'error');
+  }
 }
 async function atualizarHistorico(){ const snap=await getDocs(query(collection(db,colecoes.ocorrencias), orderBy('createdAtLocal','desc'), limit(500))); state.historico=snap.docs.map(d=>({id:d.id,...d.data()})); renderHistorico(); const sr=$('#statRegistros'); if(sr) sr.textContent=state.historico.length; const se=$('#statEmails'); if(se) se.textContent=state.historico.filter(r=>['pendente','enviado-cloud','enviado-emailjs'].includes(r.statusEmail)).length; }
 function renderHistorico(){ const busca=$('#filtroBusca').value.toLowerCase(), turma=$('#filtroTurma').value, ini=$('#filtroInicio').value, fim=$('#filtroFim').value; let lista=state.historico.filter(r=>(!turma||r.TURMA===turma)&&(!ini||r.DATA>=ini)&&(!fim||r.DATA<=fim)); if(busca) lista=lista.filter(r=>JSON.stringify(r).toLowerCase().includes(busca)); $('#listaHistorico').innerHTML=lista.map(r=>`<article class="item clickable" data-registro="${r.id}"><h4>${escapeHtml(r.ALUNO||'')}</h4><p><strong>Turma:</strong> ${escapeHtml(r.TURMA||'')} • <strong>Data:</strong> ${escapeHtml(formatDateBR(r.DATA)||'')}</p><p>${escapeHtml(r['DESCREVA O OCORRIDO']||r['DESCREVA O RECONHECIMENTO']||r['MOTIVO']||r['SINTOMAS']||'Clique para ver todas as informações do registro.')}</p><div class="badges"><span class="badge">${escapeHtml(r['CONTROLE DIÁRIO']||'Registro')}</span><span class="badge">E-mail: ${escapeHtml(r.statusEmail||'não informado')}</span></div></article>`).join('') || '<div class="card">Nenhum registro encontrado.</div>'; $$('[data-registro]').forEach(el=>el.onclick=()=>abrirRegistro(el.dataset.registro)); }
