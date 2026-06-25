@@ -9,8 +9,17 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
-const state = { user:null, profile:{role:'disciplinario'}, alunos:[], historico:[], config:{}, registroAberto:null, alunoAberto:null };
+const state = { user:null, profile:{role:'disciplinario'}, alunos:[], historico:[], config:{}, registroAberto:null, alunoAberto:null, allUsuarios:[] };
 const colecoes = { alunos:'alunos', ocorrencias:'ocorrencias', usuarios:'usuarios', config:'configuracoes' };
+
+function norm(v=''){ return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim(); }
+function detectMaeEmail(obj){
+  const entries = Object.entries(obj||{});
+  const preferred = entries.find(([k,v])=> norm(k).includes('mae') && norm(k).includes('email') && v);
+  if(preferred) return String(preferred[1]).trim();
+  const anyEmail = entries.find(([k,v])=> norm(k).includes('email') && v);
+  return anyEmail ? String(anyEmail[1]).trim() : '';
+}
 
 const TURMAS_FORMS = ['1º ALFA','1º ÔMEGA','2º ALFA','2º ÔMEGA','3º ALFA','3º ÔMEGA'];
 const FORM_SECTIONS = {
@@ -201,8 +210,25 @@ function abrirModal(){ $('#detailModal').classList.add('open'); }
 function fecharModal(){ $('#detailModal').classList.remove('open'); }
 async function salvarAluno(){ const nome=$('#alunoNome').value.trim(), turma=$('#alunoTurma').value.trim(); if(!nome||!turma){toast('Informe nome e turma.','error');return;} const id=slug(`${turma}-${nome}`); await setDoc(doc(db,colecoes.alunos,id),{nome,turma,emailResponsavel1:$('#alunoResp1').value.trim(),emailResponsavel2:$('#alunoResp2').value.trim(),telefoneResponsavel:$('#alunoTel').value.trim(),ativo:true,updatedAt:serverTimestamp()},{merge:true}); toast('Aluno salvo.'); ['#alunoNome','#alunoTurma','#alunoResp1','#alunoResp2','#alunoTel'].forEach(s=>$(s).value=''); await carregarAlunos(); }
 async function importarJson(path,colecao,mapper){ const data=await fetch(path).then(r=>r.json()); let batch=writeBatch(db), count=0, lote=0; for(const item of data){ const mapped=mapper(item); const ref=doc(db,colecao,mapped.id||slug(JSON.stringify(mapped).slice(0,80))); delete mapped.id; batch.set(ref,{...mapped,importadoEm:serverTimestamp()},{merge:true}); count++; lote++; if(lote===450){ await batch.commit(); batch=writeBatch(db); lote=0; toast(`${count} importados...`); } } if(lote) await batch.commit(); toast(`${count} registros importados.`); return count; }
-async function importarAlunos(){ await importarJson('data/alunos-seed.json',colecoes.alunos,a=>a); await carregarAlunos(); }
+async function importarAlunos(){
+  await importarJson('data/alunos-seed.json',colecoes.alunos,a=>{
+    const maeEmail = detectMaeEmail(a);
+    return {...a, nome:a.nome||a.NOME||a['Nome do aluno']||'', turma:a.turma||a.TURMA||'', emailMae:maeEmail, emailResponsavel1:maeEmail||a.emailResponsavel1||''};
+  });
+  await carregarAlunos();
+}
 async function importarHistorico(){ await importarJson('data/registros-historicos-seed.json',colecoes.ocorrencias,r=>({...r,id:`hist-${r.ID||crypto.randomUUID()}`,createdAtLocal:r['Hora de início']||new Date().toISOString(),statusEmail:'historico'})); await atualizarHistorico(); }
+async function limparBancoDados(){
+  if(!confirm('Deseja realmente apagar TODOS os dados do banco? Esta ação remove alunos, registros e usuários extras.')) return;
+  const colunas=[colecoes.ocorrencias, colecoes.alunos];
+  for(const c of colunas){
+    const snap=await getDocs(collection(db,c)); let batch=writeBatch(db),i=0;
+    for(const d of snap.docs){ batch.delete(d.ref); i++; if(i%400===0){ await batch.commit(); batch=writeBatch(db);} }
+    if(i%400!==0) await batch.commit();
+  }
+  toast('Banco de dados limpo.');
+  state.alunos=[]; state.historico=[]; renderAlunos(); renderHistorico();
+}
 function exportarCsv(){ const rows=state.historico; if(!rows.length){toast('Nada para exportar.','error');return;} const cols=[...new Set(rows.flatMap(r=>Object.keys(r)))]; const csv=[cols.join(';'),...rows.map(r=>cols.map(c=>`"${String(r[c]??'').replace(/"/g,'""')}"`).join(';'))].join('\n'); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download='registro-diario-ocorrencias.csv'; a.click(); }
 function trocarPagina(p){ $$('.nav').forEach(b=>b.classList.toggle('active',b.dataset.page===p)); $$('.page').forEach(s=>s.classList.toggle('active',s.id===`page-${p}`)); $('#pageTitle').textContent={novo:'Novo registro',historico:'Histórico',alunos:'Alunos',admin:'Admin'}[p]||'Registro'; $('.sidebar').classList.remove('open'); if(p==='historico') atualizarHistorico(); if(p==='alunos') renderAlunos(); }
 async function existeUsuarioAdmin(){ const snap = await getDocs(query(collection(db,colecoes.usuarios), where('role','==','admin'), limit(1))); return !snap.empty; }
@@ -213,5 +239,5 @@ $('#loginForm').addEventListener('submit',async e=>{ e.preventDefault(); try{ aw
 $('#setupForm').addEventListener('submit',criarContaInicial);
 $('#tabLogin').onclick=()=>mostrarAbaLogin('login'); $('#tabSetup').onclick=()=>mostrarAbaLogin('setup');
 $('#logoutBtn').onclick=()=>signOut(auth); $('#menuBtn').onclick=()=>$('.sidebar').classList.toggle('open'); $$('.nav').forEach(b=>b.onclick=()=>trocarPagina(b.dataset.page));
-$('#turmaSelect').onchange=preencherAlunos; $('#alunoSelect').onchange=atualizarResponsaveis; $('#registroForm').onsubmit=salvarRegistro; $('#limparForm').onclick=()=>{ $('#registroForm').reset(); renderControleSection(); }; $('#aplicarFiltros').onclick=renderHistorico; $('#exportarCsv').onclick=exportarCsv; $('#salvarAluno').onclick=salvarAluno; $('#importarAlunos').onclick=importarAlunos; $('#importarHistorico').onclick=importarHistorico; $('#salvarConfig').onclick=salvarConfig; $('#modalClose').onclick=fecharModal; $('#modalBackdrop').onclick=fecharModal;
+$('#turmaSelect').onchange=preencherAlunos; $('#alunoSelect').onchange=atualizarResponsaveis; $('#registroForm').onsubmit=salvarRegistro; $('#limparForm').onclick=()=>{ $('#registroForm').reset(); renderControleSection(); }; $('#aplicarFiltros').onclick=renderHistorico; $('#exportarCsv').onclick=exportarCsv; $('#salvarAluno').onclick=salvarAluno; $('#importarAlunos').onclick=importarAlunos; $('#importarHistorico').onclick=importarHistorico; $('#salvarConfig').onclick=salvarConfig; $('#limparBanco').onclick=limparBancoDados; $('#modalClose').onclick=fecharModal; $('#modalBackdrop').onclick=fecharModal;
 onAuthStateChanged(auth,async user=>{ state.user=user; $('#loginScreen').classList.toggle('hidden',!!user); $('#app').classList.toggle('hidden',!user); if(user){ await init(); await carregarPerfil(); await carregarConfig(); await carregarAlunos(); await atualizarHistorico(); } });
