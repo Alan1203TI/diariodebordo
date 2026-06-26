@@ -99,3 +99,14 @@ Importante:
 Esta versão voltou a usar Firebase Authentication por e-mail e senha. Ative o provedor **E-mail/senha** no Firebase Console. Crie o primeiro usuário admin no Authentication e faça o primeiro login; se ainda não existir perfil admin na coleção `usuarios`, o sistema criará o perfil admin automaticamente para esse primeiro usuário autenticado. Depois, use o painel Admin para criar os demais usuários com senha padrão `Sesi@123456` e troca obrigatória no primeiro acesso.
 
 Publique o arquivo `firestore.rules` desta versão no Firebase.
+
+## Primeiro administrador automático
+Nesta versão, o primeiro usuário criado no Firebase Authentication que fizer login no sistema será cadastrado automaticamente na coleção `usuarios` como `admin`.
+
+Fluxo recomendado:
+1. Ative Email/Senha no Firebase Authentication.
+2. Crie o primeiro usuário no Firebase Authentication.
+3. Entre no sistema com esse e-mail e senha.
+4. O sistema criará automaticamente o documento em `usuarios` com perfil `admin`.
+5. Os próximos usuários que fizerem login sem cadastro ficarão como `pendente` e `ativo:false`, aguardando aprovação do admin.
+

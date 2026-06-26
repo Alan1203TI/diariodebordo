@@ -26,20 +26,27 @@ async function existeAlgumAdmin(){
 
 async function garantirPerfilUsuarioLogado(){
   if(!state.user?.uid) return;
+
   const ref = doc(db, colecoes.usuarios, state.user.uid);
   const snap = await getDoc(ref);
   if(snap.exists()) return;
+
+  // Instalação inicial: se ainda não houver nenhum admin cadastrado,
+  // o primeiro usuário autenticado no Firebase vira administrador automaticamente.
   const adminExiste = await existeAlgumAdmin();
+  const primeiroAdmin = !adminExiste;
+
   await setDoc(ref, {
-    nome: state.user.email?.split('@')[0] || 'Administrador',
+    nome: state.user.displayName || state.user.email?.split('@')[0] || (primeiroAdmin ? 'Administrador' : 'Usuário pendente'),
     email: state.user.email || '',
-    role: adminExiste ? 'bloqueado' : 'admin',
-    perfil: adminExiste ? 'bloqueado' : 'admin',
-    ativo: true,
-    trocarSenhaObrigatoria: false,
-    mustChangePassword: false,
-    senhaInicial: false,
+    role: primeiroAdmin ? 'admin' : 'pendente',
+    perfil: primeiroAdmin ? 'admin' : 'pendente',
+    ativo: primeiroAdmin ? true : false,
+    trocarSenhaObrigatoria: primeiroAdmin ? true : false,
+    mustChangePassword: primeiroAdmin ? true : false,
+    senhaInicial: primeiroAdmin ? true : false,
     criadoAutomaticamente: true,
+    observacao: primeiroAdmin ? 'Primeiro usuário do sistema definido automaticamente como admin.' : 'Usuário aguardando aprovação do administrador.',
     createdAt: serverTimestamp()
   }, {merge:true});
 }
