@@ -61,3 +61,7 @@
 .month-filter input{padding:8px 10px;border:1px solid #cbd5e1;border-radius:10px}
 .bar-fill,.line-bar{background:linear-gradient(180deg,#38bdf8,#1d4ed8)!important}
 .dash-table .mini{padding:7px 10px;border-radius:9px;font-size:12px}
+
+.login-bootstrap{margin-top:14px}
+.link-button{background:transparent!important;color:#1f4fb2!important;border:0!important;padding:0!important;box-shadow:none!important;font-weight:700;cursor:pointer;width:auto!important}
+.bootstrap-form{margin-top:12px}.bootstrap-form h3{margin:0 0 6px;font-size:18px}.bootstrap-form p{font-size:13px;margin:0 0 10px}.divider{height:1px;background:#e5e7eb;margin:12px 0}
