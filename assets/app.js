@@ -12,6 +12,19 @@ const $$ = s => [...document.querySelectorAll(s)];
 const state = { user:null, profile:{role:'disciplinario'}, alunos:[], historico:[], config:{}, registroAberto:null, alunoAberto:null, allUsuarios:[] };
 const colecoes = { alunos:'alunos', ocorrencias:'ocorrencias', usuarios:'usuarios', config:'configuracoes' };
 
+function normalizarUsuarioLogin(v=''){
+  return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/\s+/g,'.').replace(/[^a-z0-9._-]/g,'');
+}
+function usuarioParaEmailAuth(usuario=''){
+  const raw = String(usuario||'').trim().toLowerCase();
+  if(raw.includes('@')) return raw;
+  return `${normalizarUsuarioLogin(raw)}@diariodebordo.com`;
+}
+function obterUsuarioPerfil(){
+  return state.profile?.usuario || state.profile?.username || (state.profile?.authEmail ? String(state.profile.authEmail).split('@')[0] : '') || (state.user?.email||'').split('@')[0];
+}
+
+
 function norm(v=''){
   return String(v||'')
     .normalize('NFD')
@@ -433,7 +446,7 @@ function applyRolePermissions(){
 
 function perfilLabel(role=labelRole()){ return ({admin:'admin', disciplinario:'disciplinário', professor:'professor', pedagogia:'pedagogia'}[role] || role); }
 function usuarioDisplay(){
-  const nome = state.profile?.nome || state.profile?.name || state.user?.displayName || state.user?.email || 'Usuário';
+  const nome = state.profile?.nome || state.profile?.name || obterUsuarioPerfil() || 'Usuário';
   return `${nome} (${labelRole()})`;
 }
 
@@ -956,7 +969,7 @@ async function carregarUsuarios(){
   state.allUsuarios = snap.docs.map(d=>({id:d.id,...d.data()}));
   const box = $('#listaUsuarios');
   if(box){
-    box.innerHTML = state.allUsuarios.map(u=>`<div class="item"><h4>${escapeHtml(u.nome||u.email||'Usuário')}</h4><p>${escapeHtml(u.email||'')} • ${escapeHtml(u.role||u.perfil||'disciplinario')} • ${u.ativo===false?'inativo':'ativo'}${(u.trocarSenhaObrigatoria||u.senhaInicial)?' • troca de senha pendente':''}</p><div class="actions">${u.id===state.user.uid?'<span class="muted">Usuário atual</span>':`<button type="button" class="danger mini" data-delete-user="${escapeHtml(u.id)}">Deletar usuário</button>`}</div></div>`).join('') || '<p class="muted">Nenhum usuário listado.</p>';
+    box.innerHTML = state.allUsuarios.map(u=>`<div class="item"><h4>${escapeHtml(u.nome||u.usuario||'Usuário')}</h4><p><strong>Usuário:</strong> ${escapeHtml(u.usuario||u.username||(u.authEmail||u.email||'').split('@')[0])} • ${escapeHtml(u.role||u.perfil||'disciplinario')} • ${u.ativo===false?'inativo':'ativo'}${(u.trocarSenhaObrigatoria||u.senhaInicial)?' • troca de senha pendente':''}</p><div class="actions">${u.id===state.user.uid?'<span class="muted">Usuário atual</span>':`<button type="button" class="danger mini" data-delete-user="${escapeHtml(u.id)}">Deletar usuário</button>`}</div></div>`).join('') || '<p class="muted">Nenhum usuário listado.</p>';
     $$('[data-delete-user]').forEach(btn=>btn.onclick=()=>deletarUsuario(btn.dataset.deleteUser));
   }
 }
@@ -978,29 +991,33 @@ async function criarUsuarioAdmin(ev){
   ev.preventDefault();
   if(labelRole()!=='admin'){ toast('Apenas administradores podem criar usuários.','error'); return; }
   const nome=$('#adminUserNome').value.trim();
-  const email=$('#adminUserEmail').value.trim();
+  const usuarioRaw=$('#adminUserUsuario')?.value?.trim() || '';
+  const usuario=normalizarUsuarioLogin(usuarioRaw);
   const senha=$('#adminUserSenhaPadrao').value;
   const role=$('#adminUserPerfil').value;
-  if(!nome || !email || senha.length<6){ toast('Informe nome, e-mail e senha padrão com pelo menos 6 caracteres.','error'); return; }
+  if(!nome || !usuario || senha.length<6){ toast('Informe nome, usuário e senha padrão com pelo menos 6 caracteres.','error'); return; }
+  const authEmail = usuarioParaEmailAuth(usuario);
   let secondaryApp=null;
   try{
     secondaryApp = initializeApp(firebaseConfig, 'secondary-'+Date.now());
     const secondaryAuth = getAuth(secondaryApp);
-    const cred = await createUserWithEmailAndPassword(secondaryAuth,email,senha);
-    await setDoc(doc(db,colecoes.usuarios,cred.user.uid),{nome,email,role,ativo:true,trocarSenhaObrigatoria:true,senhaInicial:true,createdAt:serverTimestamp(),criadoPor:state.user.email},{merge:true});
+    const cred = await createUserWithEmailAndPassword(secondaryAuth,authEmail,senha);
+    await setDoc(doc(db,colecoes.usuarios,cred.user.uid),{nome,usuario,username:usuario,authEmail,email:authEmail,role,ativo:true,trocarSenhaObrigatoria:true,senhaInicial:true,createdAt:serverTimestamp(),criadoPor:usuarioDisplay()},{merge:true});
     toast('Usuário criado com sucesso. Ele deverá trocar a senha no primeiro acesso.');
     $('#adminUserForm').reset();
     if($('#adminUserSenhaPadrao')) $('#adminUserSenhaPadrao').value='Sesi@123456';
     await carregarUsuarios();
   }catch(err){
-    toast('Erro ao criar usuário: '+(err?.message||err),'error');
+    let msg = err?.message || err;
+    if(String(msg).includes('auth/email-already-in-use')) msg = 'Este usuário já existe.';
+    toast('Erro ao criar usuário: '+msg,'error');
   }finally{
     if(secondaryApp) try{ await deleteApp(secondaryApp); }catch(e){}
   }
 }
 
 aplicarMascarasData();
-$('#loginForm').addEventListener('submit',async e=>{ e.preventDefault(); try{ await signInWithEmailAndPassword(auth,$('#loginEmail').value,$('#loginPassword').value); }catch(err){toast('Erro no login: '+err.message,'error')} });
+$('#loginForm').addEventListener('submit',async e=>{ e.preventDefault(); try{ const usuario=$('#loginUsuario').value; await signInWithEmailAndPassword(auth,usuarioParaEmailAuth(usuario),$('#loginPassword').value); }catch(err){toast('Erro no login: usuário ou senha inválidos.','error')} });
 if($('#changePasswordForm')) $('#changePasswordForm').addEventListener('submit',trocarSenhaInicial);
 $('#logoutBtn').onclick=()=>signOut(auth); $('#menuBtn').onclick=()=>$('.sidebar').classList.toggle('open'); $$('.nav').forEach(b=>b.onclick=()=>trocarPagina(b.dataset.page));
 $('#turmaSelect').onchange=preencherAlunos; $('#alunoSelect').onchange=atualizarResponsaveis; if($('#profTurmaSelect')) $('#profTurmaSelect').onchange=preencherAlunosProfessor; if($('#profAlunoSelect')) $('#profAlunoSelect').onchange=atualizarAlunoProfessor; $('#registroForm').onsubmit=salvarRegistro; if($('#professorForm')) $('#professorForm').onsubmit=salvarRegistroProfessor; $('#limparForm').onclick=()=>{ $('#registroForm').reset(); renderControleSection(); }; if($('#limparProfessorForm')) $('#limparProfessorForm').onclick=()=>{ $('#professorForm').reset(); const pn=$('#professorNome'); if(pn) pn.value=state.profile.nome || state.user.email; }; $('#aplicarFiltros').onclick=renderHistorico; $('#exportarCsv').onclick=exportarCsv; if($('#atualizarDashboard')) $('#atualizarDashboard').onclick=renderDashboard; if($('#dashMesDetalhe')) $('#dashMesDetalhe').onchange=renderDashboard; if($('#limparDashboard')) $('#limparDashboard').onclick=()=>{ ['#dashInicio','#dashFim','#dashOrigem','#dashMesDetalhe'].forEach(s=>{ if($(s)) $(s).value=''; }); if($('#dashTurma')) $('#dashTurma').value=''; renderDashboard(); }; $('#salvarAluno').onclick=salvarAluno; $('#importarAlunos').onclick=importarAlunos; $('#importarHistorico').onclick=importarHistorico; $('#importarAlunosArquivo').onclick=importarAlunosArquivo; $('#importarHistoricoArquivo').onclick=importarHistoricoArquivo; $('#adminUserForm').addEventListener('submit',criarUsuarioAdmin); $('#salvarConfig').onclick=salvarConfig; $('#limparBanco').onclick=limparBancoDados; $('#modalClose').onclick=fecharModal; $('#modalBackdrop').onclick=fecharModal;

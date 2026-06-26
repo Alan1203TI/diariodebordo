@@ -35,3 +35,15 @@ Na importação de nova planilha SQL, o sistema reconhece automaticamente E-MAIL
 - Datas aceitam padrão brasileiro dd/mm/aaaa e os filtros consideram registros importados do Excel.
 - Novo gráfico: professores com mais registros de ocorrência de aluno.
 - Gráficos com cores indicativas por tipo/gravidade.
+
+## Login por usuário e senha
+
+Nesta versão o acesso do sistema foi alterado para usuário e senha. O Firebase Authentication continua sendo usado internamente, mas o programa converte o usuário para um e-mail técnico interno no formato `usuario@diariodebordo.com`.
+
+No painel Admin, crie usuários informando:
+- nome;
+- usuário;
+- perfil;
+- senha padrão.
+
+No primeiro acesso, o usuário será obrigado a trocar a senha antes de utilizar o sistema.

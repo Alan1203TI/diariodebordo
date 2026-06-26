@@ -14,13 +14,13 @@
       <h1>Registro Diário de Alunos</h1>
       <p>Controle de ocorrências, atendimentos, tarefas, uniforme e comunicação com responsáveis.</p>
       <form id="loginForm">
-        <label>E-mail</label>
-        <input id="loginEmail" type="email" required placeholder="seuemail@escola.com" />
+        <label>Usuário</label>
+        <input id="loginUsuario" type="text" required placeholder="seu usuário" autocomplete="username" />
         <label>Senha</label>
         <input id="loginPassword" type="password" required placeholder="••••••••" />
         <button type="submit">Entrar</button>
       </form>
-      <small id="loginHelp">Entre com o e-mail e senha cadastrado pelo administrador.</small>
+      <small id="loginHelp">Entre com o usuário e senha cadastrados pelo administrador.</small>
     </div>
   </section>
 
@@ -193,13 +193,13 @@
 
         <div class="card">
           <h3>Criar usuários do sistema</h3>
-          <p>Crie usuários para disciplinários, pedagogia ou administradores. A criação de usuários agora fica somente no painel Admin.</p>
+          <p>Crie usuários para disciplinários, professores, pedagogia ou administradores. O acesso será feito apenas com usuário e senha.</p>
           <form id="adminUserForm" class="grid four">
             <div><label>Nome</label><input id="adminUserNome" required placeholder="Nome do usuário" /></div>
-            <div><label>E-mail</label><input id="adminUserEmail" type="email" required placeholder="email@escola.com" /></div>
+            <div><label>Usuário</label><input id="adminUserUsuario" required placeholder="ex.: francisco" autocomplete="off" /></div>
             <div><label>Perfil</label><select id="adminUserPerfil"><option value="disciplinario">Disciplinário</option><option value="professor">Professor</option><option value="pedagogia">Pedagogia</option><option value="admin">Administrador</option></select></div>
             <div><label>Senha padrão</label><input id="adminUserSenhaPadrao" type="password" required minlength="6" value="Sesi@123456" placeholder="senha padrão para todos" /></div>
-            <div class="full"><small class="muted">O usuário entrará com a senha padrão e será obrigado a criar uma nova senha no primeiro acesso.</small><br><button type="submit">Criar usuário</button></div>
+            <div class="full"><small class="muted">O usuário entrará com o usuário criado e a senha padrão, sendo obrigado a criar uma nova senha no primeiro acesso.</small><br><button type="submit">Criar usuário</button></div>
           </form>
           <div id="listaUsuarios" class="list compact admin-users"></div>
         </div>

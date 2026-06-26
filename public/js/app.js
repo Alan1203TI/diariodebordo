@@ -12,6 +12,19 @@ const $$ = s => [...document.querySelectorAll(s)];
 const state = { user:null, profile:{role:'disciplinario'}, alunos:[], historico:[], config:{}, registroAberto:null, alunoAberto:null, allUsuarios:[] };
 const colecoes = { alunos:'alunos', ocorrencias:'ocorrencias', usuarios:'usuarios', config:'configuracoes' };
 
+function normalizarUsuarioLogin(v=''){
+  return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/\s+/g,'.').replace(/[^a-z0-9._-]/g,'');
+}
+function usuarioParaEmailAuth(usuario=''){
+  const raw = String(usuario||'').trim().toLowerCase();
+  if(raw.includes('@')) return raw;
+  return `${normalizarUsuarioLogin(raw)}@diariodebordo.com`;
+}
+function obterUsuarioPerfil(){
+  return state.profile?.usuario || state.profile?.username || (state.profile?.authEmail ? String(state.profile.authEmail).split('@')[0] : '') || (state.user?.email||'').split('@')[0];
+}
+
+
 function norm(v=''){
   return String(v||'')
     .normalize('NFD')
@@ -433,7 +446,7 @@ function applyRolePermissions(){
 
 function perfilLabel(role=labelRole()){ return ({admin:'admin', disciplinario:'disciplinário', professor:'professor', pedagogia:'pedagogia'}[role] || role); }
 function usuarioDisplay(){
-  const nome = state.profile?.nome || state.profile?.name || state.user?.displayName || state.user?.email || 'Usuário';
+  const nome = state.profile?.nome || state.profile?.name || obterUsuarioPerfil() || 'Usuário';
   return `${nome} (${labelRole()})`;
 }
 
@@ -703,27 +716,50 @@ function mesRegistro(r){
   const [y,m]=d.split('-'); return `${m}/${y}`;
 }
 function corIndicador(label=''){
-  const n=norm(label);
-  if(n.includes('reconhecimento') || n.includes('bom') || n.includes('positivo') || n.includes('destaque')) return '#16a34a';
-  if(n.includes('grave') || n.includes('suspens') || n.includes('advert') || n.includes('desrespeito') || n.includes('comportamento inadequado')) return '#dc2626';
-  if(n.includes('medio') || n.includes('saude') || n.includes('febre') || n.includes('atendimento')) return '#f97316';
-  if(n.includes('atras') || n.includes('uniforme') || n.includes('tarefa') || n.includes('livro') || n.includes('sem fazer')) return '#eab308';
-  if(n.includes('professor') || n.includes('conversa') || n.includes('postura')) return '#2563eb';
-  return '#0ea5e9';
+  return '#2563eb';
 }
 function chartBars(elId, data, maxItems=10){
   const el=$('#'+elId); if(!el) return;
   const rows=(data||[]).slice(0,maxItems);
   if(!rows.length){ el.innerHTML='<p class="muted">Sem dados para exibir.</p>'; return; }
   const max=Math.max(...rows.map(r=>r.value),1);
-  el.innerHTML=rows.map(r=>`<div class="bar-row"><span class="bar-label" title="${escapeHtml(r.label)}">${escapeHtml(r.label)}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.max(4,(r.value/max)*100)}%;background:${corIndicador(r.label)}"></div></div><strong>${r.value}</strong></div>`).join('');
+  el.innerHTML=rows.map(r=>`<div class="bar-row"><span class="bar-label" title="${escapeHtml(r.label)}">${escapeHtml(r.label)}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.max(4,(r.value/max)*100)}%"></div></div><strong>${r.value}</strong></div>`).join('');
 }
 function chartTimeline(elId, data){
   const el=$('#'+elId); if(!el) return;
-  const rows=[...(data||[])].sort((a,b)=>{ const ka=a.label==='Sem data'?'0000-00':a.label.split('/').reverse().join('-'); const kb=b.label==='Sem data'?'0000-00':b.label.split('/').reverse().join('-'); return ka.localeCompare(kb); }).slice(-12);
+  const rows=[...(data||[])].sort((a,b)=>String(a.key||a.label).localeCompare(String(b.key||b.label)));
   if(!rows.length){ el.innerHTML='<p class="muted">Sem dados para exibir.</p>'; return; }
   const max=Math.max(...rows.map(r=>r.value),1);
   el.innerHTML=`<div class="mini-line">${rows.map(r=>`<div class="line-col"><div class="line-bar" style="height:${Math.max(8,(r.value/max)*130)}px"></div><small>${escapeHtml(r.label)}</small><strong>${r.value}</strong></div>`).join('')}</div>`;
+}
+function mesesDisponiveisDashboard(lista){
+  const set=new Set();
+  (lista||[]).forEach(r=>{ const d=dataRegistroKey(r); if(/^\d{4}-\d{2}/.test(d)) set.add(d.slice(0,7)); });
+  return [...set].sort();
+}
+function preencherDashboardMes(lista){
+  const input=$('#dashMesDetalhe'); if(!input) return '';
+  const meses=mesesDisponiveisDashboard(lista);
+  const atual=input.value;
+  if(atual && meses.includes(atual)) return atual;
+  const escolhido=meses.length ? meses[meses.length-1] : new Date().toISOString().slice(0,7);
+  input.value=escolhido;
+  return escolhido;
+}
+function ocorrenciasPorDiaNoMes(lista, mesAno){
+  if(!mesAno) return [];
+  const [ano,mes]=mesAno.split('-').map(Number);
+  const totalDias=new Date(ano, mes, 0).getDate();
+  const contagem=new Map();
+  for(let d=1; d<=totalDias; d++){
+    const dia=String(d).padStart(2,'0');
+    contagem.set(`${ano}-${String(mes).padStart(2,'0')}-${dia}`, {key:`${ano}-${String(mes).padStart(2,'0')}-${dia}`, label:dia, value:0});
+  }
+  (lista||[]).forEach(r=>{
+    const d=dataRegistroKey(r);
+    if(d && d.slice(0,7)===mesAno && contagem.has(d)) contagem.get(d).value++;
+  });
+  return [...contagem.values()];
 }
 function preencherDashboardTurmas(){
   const sel=$('#dashTurma'); if(!sel) return;
@@ -756,7 +792,8 @@ function renderDashboard(){
   const cardsEl=$('#dashboardCards');
   if(cardsEl) cardsEl.innerHTML=cards.map(([t,v])=>`<div class="dash-card"><span>${escapeHtml(t)}</span><strong>${escapeHtml(v)}</strong></div>`).join('');
   chartBars('chartTipo', contarPor(lista,r=>r['CONTROLE DIÁRIO']||r.tipoRegistro||'Registro'), 10);
-  chartTimeline('chartMes', contarPor(lista, mesRegistro));
+  const mesSelecionado=preencherDashboardMes(lista);
+  chartTimeline('chartMes', ocorrenciasPorDiaNoMes(lista, mesSelecionado));
   chartBars('chartAlunos', porAluno, 10);
   chartBars('chartTurmas', porTurma, 10);
   chartBars('chartItensProfessor', contarPor(lista.filter(r=>origemRegistro(r)==='professor'), r=>r['ITEM DE REFERÊNCIA']||r['ITEM DE REFERENCIA']||r.ITEM), 10);
@@ -769,12 +806,21 @@ function renderDashboard(){
       const regs=lista.filter(r=>(r.ALUNO||'')===a.label).sort((x,y)=>String(dataRegistroKey(y)).localeCompare(String(dataRegistroKey(x))));
       const ultimo=regs[0]||{};
       const tipo=contarPor(regs,r=>r['CONTROLE DIÁRIO']||r.tipoRegistro||'Registro')[0]?.label||'-';
-      return `<tr><td>${escapeHtml(a.label)}</td><td>${escapeHtml(ultimo.TURMA||'-')}</td><td>${a.value}</td><td>${escapeHtml(tipo)}</td><td>${escapeHtml(formatDateBR(dataRegistroKey(ultimo))||'-')}</td></tr>`;
+      return `<tr><td>${escapeHtml(a.label)}</td><td>${escapeHtml(ultimo.TURMA||'-')}</td><td>${a.value}</td><td>${escapeHtml(tipo)}</td><td>${escapeHtml(formatDateBR(dataRegistroKey(ultimo))||'-')}</td><td><button type="button" class="mini" data-dashboard-aluno="${escapeHtml(a.label)}">Ver registros</button></td></tr>`;
     }).join('');
-    table.innerHTML=`<table class="dash-table"><thead><tr><th>Aluno</th><th>Turma</th><th>Total</th><th>Tipo mais frequente</th><th>Último registro</th></tr></thead><tbody>${rows||'<tr><td colspan="5">Sem dados.</td></tr>'}</tbody></table>`;
+    table.innerHTML=`<table class="dash-table"><thead><tr><th>Aluno</th><th>Turma</th><th>Total</th><th>Tipo mais frequente</th><th>Último registro</th><th>Ação</th></tr></thead><tbody>${rows||'<tr><td colspan="6">Sem dados.</td></tr>'}</tbody></table>`;
+    $$('[data-dashboard-aluno]').forEach(btn=>btn.onclick=()=>abrirHistoricoDoAluno(btn.dataset.dashboardAluno));
   }
 }
 
+function abrirHistoricoDoAluno(nomeAluno){
+  trocarPagina('historico');
+  const busca=$('#filtroBusca'); if(busca) busca.value=nomeAluno||'';
+  const turma=$('#filtroTurma'); if(turma) turma.value='';
+  const ini=$('#filtroInicio'); if(ini) ini.value='';
+  const fim=$('#filtroFim'); if(fim) fim.value='';
+  renderHistorico();
+}
 function renderHistorico(){ const busca=$('#filtroBusca').value.toLowerCase(), turma=$('#filtroTurma').value, ini=$('#filtroInicio').value, fim=$('#filtroFim').value; let lista=state.historico.filter(r=>(!turma||r.TURMA===turma)&&(!toISODate(ini)||dataRegistroKey(r)>=toISODate(ini))&&(!toISODate(fim)||dataRegistroKey(r)<=toISODate(fim)));  if(busca) lista=lista.filter(r=>JSON.stringify(r).toLowerCase().includes(busca)); $('#listaHistorico').innerHTML=lista.map(r=>`<article class="item clickable" data-registro="${r.id}"><h4>${escapeHtml(r.ALUNO||'')}</h4><p><strong>Turma:</strong> ${escapeHtml(r.TURMA||'')} • <strong>Data:</strong> ${escapeHtml(formatDateBR(dataRegistroKey(r))||'')} • <strong>Registrado por:</strong> ${escapeHtml(registroAutorDisplay(r))}</p><p>${escapeHtml(r['DESCREVA O OCORRIDO']||r['DESCREVA O RECONHECIMENTO']||r['MOTIVO']||r['SINTOMAS']||'Clique para ver todas as informações do registro.')}</p><div class="badges"><span class="badge">${escapeHtml(r['CONTROLE DIÁRIO']||'Registro')}</span>${r.origem==='professor'?'<span class="badge">Registro professor</span>':`<span class="badge">E-mail: ${escapeHtml(r.statusEmail||'não informado')}</span>`}</div></article>`).join('') || '<div class="card">Nenhum registro encontrado.</div>'; $$('[data-registro]').forEach(el=>el.onclick=()=>abrirRegistro(el.dataset.registro)); }
 function renderAlunos(){ $('#listaAlunos').innerHTML=state.alunos.slice(0,700).map(a=>`<div class="item clickable" data-aluno="${a.id}"><h4>${escapeHtml(a.nome)}</h4><p>${escapeHtml(a.turma||'')}</p><p>${emailsDoAluno(a).map(escapeHtml).join(', ')||'Sem e-mail cadastrado'}</p><div class="badges"><span class="badge">Ver aba completa</span></div></div>`).join(''); $$('[data-aluno]').forEach(el=>el.onclick=()=>abrirAluno(el.dataset.aluno)); }
 function keyValuesTable(obj){ const rows=Object.entries(obj||{}).filter(([k,v])=>!['id','dadosCompletos'].includes(k)&&v!==undefined&&v!==null&&String(v).trim()!=='' ); return `<div class="detail-grid">${rows.map(([k,v])=>`<div><strong>${escapeHtml(k)}</strong><span>${escapeHtml(v)}</span></div>`).join('')}</div>`; }
@@ -923,7 +969,7 @@ async function carregarUsuarios(){
   state.allUsuarios = snap.docs.map(d=>({id:d.id,...d.data()}));
   const box = $('#listaUsuarios');
   if(box){
-    box.innerHTML = state.allUsuarios.map(u=>`<div class="item"><h4>${escapeHtml(u.nome||u.email||'Usuário')}</h4><p>${escapeHtml(u.email||'')} • ${escapeHtml(u.role||u.perfil||'disciplinario')} • ${u.ativo===false?'inativo':'ativo'}${(u.trocarSenhaObrigatoria||u.senhaInicial)?' • troca de senha pendente':''}</p><div class="actions">${u.id===state.user.uid?'<span class="muted">Usuário atual</span>':`<button type="button" class="danger mini" data-delete-user="${escapeHtml(u.id)}">Deletar usuário</button>`}</div></div>`).join('') || '<p class="muted">Nenhum usuário listado.</p>';
+    box.innerHTML = state.allUsuarios.map(u=>`<div class="item"><h4>${escapeHtml(u.nome||u.usuario||'Usuário')}</h4><p><strong>Usuário:</strong> ${escapeHtml(u.usuario||u.username||(u.authEmail||u.email||'').split('@')[0])} • ${escapeHtml(u.role||u.perfil||'disciplinario')} • ${u.ativo===false?'inativo':'ativo'}${(u.trocarSenhaObrigatoria||u.senhaInicial)?' • troca de senha pendente':''}</p><div class="actions">${u.id===state.user.uid?'<span class="muted">Usuário atual</span>':`<button type="button" class="danger mini" data-delete-user="${escapeHtml(u.id)}">Deletar usuário</button>`}</div></div>`).join('') || '<p class="muted">Nenhum usuário listado.</p>';
     $$('[data-delete-user]').forEach(btn=>btn.onclick=()=>deletarUsuario(btn.dataset.deleteUser));
   }
 }
@@ -945,30 +991,34 @@ async function criarUsuarioAdmin(ev){
   ev.preventDefault();
   if(labelRole()!=='admin'){ toast('Apenas administradores podem criar usuários.','error'); return; }
   const nome=$('#adminUserNome').value.trim();
-  const email=$('#adminUserEmail').value.trim();
+  const usuarioRaw=$('#adminUserUsuario')?.value?.trim() || '';
+  const usuario=normalizarUsuarioLogin(usuarioRaw);
   const senha=$('#adminUserSenhaPadrao').value;
   const role=$('#adminUserPerfil').value;
-  if(!nome || !email || senha.length<6){ toast('Informe nome, e-mail e senha padrão com pelo menos 6 caracteres.','error'); return; }
+  if(!nome || !usuario || senha.length<6){ toast('Informe nome, usuário e senha padrão com pelo menos 6 caracteres.','error'); return; }
+  const authEmail = usuarioParaEmailAuth(usuario);
   let secondaryApp=null;
   try{
     secondaryApp = initializeApp(firebaseConfig, 'secondary-'+Date.now());
     const secondaryAuth = getAuth(secondaryApp);
-    const cred = await createUserWithEmailAndPassword(secondaryAuth,email,senha);
-    await setDoc(doc(db,colecoes.usuarios,cred.user.uid),{nome,email,role,ativo:true,trocarSenhaObrigatoria:true,senhaInicial:true,createdAt:serverTimestamp(),criadoPor:state.user.email},{merge:true});
+    const cred = await createUserWithEmailAndPassword(secondaryAuth,authEmail,senha);
+    await setDoc(doc(db,colecoes.usuarios,cred.user.uid),{nome,usuario,username:usuario,authEmail,email:authEmail,role,ativo:true,trocarSenhaObrigatoria:true,senhaInicial:true,createdAt:serverTimestamp(),criadoPor:usuarioDisplay()},{merge:true});
     toast('Usuário criado com sucesso. Ele deverá trocar a senha no primeiro acesso.');
     $('#adminUserForm').reset();
     if($('#adminUserSenhaPadrao')) $('#adminUserSenhaPadrao').value='Sesi@123456';
     await carregarUsuarios();
   }catch(err){
-    toast('Erro ao criar usuário: '+(err?.message||err),'error');
+    let msg = err?.message || err;
+    if(String(msg).includes('auth/email-already-in-use')) msg = 'Este usuário já existe.';
+    toast('Erro ao criar usuário: '+msg,'error');
   }finally{
     if(secondaryApp) try{ await deleteApp(secondaryApp); }catch(e){}
   }
 }
 
 aplicarMascarasData();
-$('#loginForm').addEventListener('submit',async e=>{ e.preventDefault(); try{ await signInWithEmailAndPassword(auth,$('#loginEmail').value,$('#loginPassword').value); }catch(err){toast('Erro no login: '+err.message,'error')} });
+$('#loginForm').addEventListener('submit',async e=>{ e.preventDefault(); try{ const usuario=$('#loginUsuario').value; await signInWithEmailAndPassword(auth,usuarioParaEmailAuth(usuario),$('#loginPassword').value); }catch(err){toast('Erro no login: usuário ou senha inválidos.','error')} });
 if($('#changePasswordForm')) $('#changePasswordForm').addEventListener('submit',trocarSenhaInicial);
 $('#logoutBtn').onclick=()=>signOut(auth); $('#menuBtn').onclick=()=>$('.sidebar').classList.toggle('open'); $$('.nav').forEach(b=>b.onclick=()=>trocarPagina(b.dataset.page));
-$('#turmaSelect').onchange=preencherAlunos; $('#alunoSelect').onchange=atualizarResponsaveis; if($('#profTurmaSelect')) $('#profTurmaSelect').onchange=preencherAlunosProfessor; if($('#profAlunoSelect')) $('#profAlunoSelect').onchange=atualizarAlunoProfessor; $('#registroForm').onsubmit=salvarRegistro; if($('#professorForm')) $('#professorForm').onsubmit=salvarRegistroProfessor; $('#limparForm').onclick=()=>{ $('#registroForm').reset(); renderControleSection(); }; if($('#limparProfessorForm')) $('#limparProfessorForm').onclick=()=>{ $('#professorForm').reset(); const pn=$('#professorNome'); if(pn) pn.value=state.profile.nome || state.user.email; }; $('#aplicarFiltros').onclick=renderHistorico; $('#exportarCsv').onclick=exportarCsv; if($('#atualizarDashboard')) $('#atualizarDashboard').onclick=renderDashboard; if($('#limparDashboard')) $('#limparDashboard').onclick=()=>{ ['#dashInicio','#dashFim','#dashOrigem'].forEach(s=>{ if($(s)) $(s).value=''; }); if($('#dashTurma')) $('#dashTurma').value=''; renderDashboard(); }; $('#salvarAluno').onclick=salvarAluno; $('#importarAlunos').onclick=importarAlunos; $('#importarHistorico').onclick=importarHistorico; $('#importarAlunosArquivo').onclick=importarAlunosArquivo; $('#importarHistoricoArquivo').onclick=importarHistoricoArquivo; $('#adminUserForm').addEventListener('submit',criarUsuarioAdmin); $('#salvarConfig').onclick=salvarConfig; $('#limparBanco').onclick=limparBancoDados; $('#modalClose').onclick=fecharModal; $('#modalBackdrop').onclick=fecharModal;
+$('#turmaSelect').onchange=preencherAlunos; $('#alunoSelect').onchange=atualizarResponsaveis; if($('#profTurmaSelect')) $('#profTurmaSelect').onchange=preencherAlunosProfessor; if($('#profAlunoSelect')) $('#profAlunoSelect').onchange=atualizarAlunoProfessor; $('#registroForm').onsubmit=salvarRegistro; if($('#professorForm')) $('#professorForm').onsubmit=salvarRegistroProfessor; $('#limparForm').onclick=()=>{ $('#registroForm').reset(); renderControleSection(); }; if($('#limparProfessorForm')) $('#limparProfessorForm').onclick=()=>{ $('#professorForm').reset(); const pn=$('#professorNome'); if(pn) pn.value=state.profile.nome || state.user.email; }; $('#aplicarFiltros').onclick=renderHistorico; $('#exportarCsv').onclick=exportarCsv; if($('#atualizarDashboard')) $('#atualizarDashboard').onclick=renderDashboard; if($('#dashMesDetalhe')) $('#dashMesDetalhe').onchange=renderDashboard; if($('#limparDashboard')) $('#limparDashboard').onclick=()=>{ ['#dashInicio','#dashFim','#dashOrigem','#dashMesDetalhe'].forEach(s=>{ if($(s)) $(s).value=''; }); if($('#dashTurma')) $('#dashTurma').value=''; renderDashboard(); }; $('#salvarAluno').onclick=salvarAluno; $('#importarAlunos').onclick=importarAlunos; $('#importarHistorico').onclick=importarHistorico; $('#importarAlunosArquivo').onclick=importarAlunosArquivo; $('#importarHistoricoArquivo').onclick=importarHistoricoArquivo; $('#adminUserForm').addEventListener('submit',criarUsuarioAdmin); $('#salvarConfig').onclick=salvarConfig; $('#limparBanco').onclick=limparBancoDados; $('#modalClose').onclick=fecharModal; $('#modalBackdrop').onclick=fecharModal;
 onAuthStateChanged(auth,async user=>{ state.user=user; $('#loginScreen').classList.toggle('hidden',!!user); $('#app').classList.toggle('hidden',!user); if(user){ await init(); await carregarPerfil(); applyRolePermissions(); await carregarConfig(); await carregarAlunos(); await atualizarHistorico(); trocarPagina(paginaInicialPorPerfil()); } });
