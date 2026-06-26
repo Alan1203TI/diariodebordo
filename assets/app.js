@@ -1,12 +1,21 @@
 import { firebaseConfig } from '../firebase-config.js';
 const emailJsConfig = window.emailJsConfig || { enabled:false, publicKey:'', serviceId:'', templateId:'' };
-import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
 import { getFirestore, collection, doc, getDoc, setDoc, addDoc, getDocs, deleteDoc, query, where, orderBy, limit, serverTimestamp, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+let authAnonimaPronta = null;
+async function garantirAuthAnonima(){
+  if(auth.currentUser) return auth.currentUser;
+  if(!authAnonimaPronta){
+    authAnonimaPronta = signInAnonymously(auth).then(cred=>cred.user);
+  }
+  return authAnonimaPronta;
+}
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const state = { user:null, profile:{role:'disciplinario'}, alunos:[], historico:[], config:{}, registroAberto:null, alunoAberto:null, allUsuarios:[] };
@@ -22,6 +31,80 @@ function usuarioParaEmailAuth(usuario=''){
 }
 function obterUsuarioPerfil(){
   return state.profile?.usuario || state.profile?.username || (state.profile?.authEmail ? String(state.profile.authEmail).split('@')[0] : '') || (state.user?.email||'').split('@')[0];
+}
+
+async function sha256(text){
+  const data = new TextEncoder().encode(String(text||''));
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function hashSenha(senha, salt){
+  return sha256(`${salt}::${senha}`);
+}
+function usuarioDocId(usuario){
+  return `usuario-${normalizarUsuarioLogin(usuario)}`;
+}
+async function criarAdminInicialSeNecessario(){
+  await garantirAuthAnonima();
+  const ref = doc(db, colecoes.usuarios, usuarioDocId('admin'));
+  const snap = await getDoc(ref);
+  if(snap.exists()) return;
+  const salt = crypto.randomUUID();
+  const senhaHash = await hashSenha('Sesi@123456', salt);
+  await setDoc(ref, {
+    nome:'Administrador', usuario:'admin', username:'admin', role:'admin', perfil:'admin', ativo:true,
+    salt, senhaHash, trocarSenhaObrigatoria:true, mustChangePassword:true, senhaInicial:true,
+    authInterno:true, createdAt:serverTimestamp()
+  }, {merge:true});
+}
+async function loginInterno(usuario, senha){
+  await garantirAuthAnonima();
+  await criarAdminInicialSeNecessario();
+  const username = normalizarUsuarioLogin(usuario);
+  const ref = doc(db, colecoes.usuarios, usuarioDocId(username));
+  const snap = await getDoc(ref);
+  if(!snap.exists()) throw new Error('Usuário ou senha inválidos.');
+  const perfil = snap.data();
+  if(perfil.ativo === false) throw new Error('Usuário desativado.');
+  const salt = perfil.salt || username;
+  const hash = await hashSenha(senha, salt);
+  if(hash !== perfil.senhaHash) throw new Error('Usuário ou senha inválidos.');
+  state.user = { uid: snap.id, email: username, usuario: username };
+  state.profile = { id:snap.id, ...perfil, usuario: perfil.usuario || username, username: perfil.username || username };
+  sessionStorage.setItem('diario_usuario', JSON.stringify({uid:state.user.uid, usuario:username}));
+  await iniciarSessaoInterna();
+}
+async function tentarRestaurarSessao(){
+  await garantirAuthAnonima();
+  const raw = sessionStorage.getItem('diario_usuario');
+  if(!raw) return false;
+  try{
+    const sess = JSON.parse(raw);
+    const snap = await getDoc(doc(db, colecoes.usuarios, sess.uid));
+    if(!snap.exists() || snap.data().ativo===false) throw new Error('sessão inválida');
+    const perfil = snap.data();
+    state.user = {uid:sess.uid, email:perfil.usuario || sess.usuario, usuario:perfil.usuario || sess.usuario};
+    state.profile = {id:sess.uid, ...perfil};
+    await iniciarSessaoInterna();
+    return true;
+  }catch(e){ sessionStorage.removeItem('diario_usuario'); return false; }
+}
+async function logoutInterno(){
+  sessionStorage.removeItem('diario_usuario');
+  state.user=null; state.profile={role:'disciplinario'};
+  $('#loginScreen').classList.remove('hidden');
+  $('#app').classList.add('hidden');
+}
+async function iniciarSessaoInterna(){
+  $('#loginScreen').classList.add('hidden');
+  $('#app').classList.remove('hidden');
+  await init();
+  await carregarPerfil();
+  applyRolePermissions();
+  await carregarConfig();
+  await carregarAlunos();
+  await atualizarHistorico();
+  trocarPagina(paginaInicialPorPerfil());
 }
 
 
@@ -465,14 +548,19 @@ async function trocarSenhaInicial(ev){
   if(nova.length < 6){ toast('A nova senha precisa ter pelo menos 6 caracteres.','error'); return; }
   if(nova !== confirma){ toast('As senhas não conferem.','error'); return; }
   try{
-    await updatePassword(auth.currentUser, nova);
+    const salt = crypto.randomUUID();
+    const senhaHash = await hashSenha(nova, salt);
     await setDoc(doc(db,colecoes.usuarios,state.user.uid),{
+      salt,
+      senhaHash,
       trocarSenhaObrigatoria:false,
       mustChangePassword:false,
       senhaInicial:false,
       senhaAlteradaEm:serverTimestamp(),
       updatedAt:serverTimestamp()
     },{merge:true});
+    state.profile.salt=salt;
+    state.profile.senhaHash=senhaHash;
     state.profile.trocarSenhaObrigatoria=false;
     state.profile.mustChangePassword=false;
     state.profile.senhaInicial=false;
@@ -480,10 +568,7 @@ async function trocarSenhaInicial(ev){
     toast('Senha alterada com sucesso.');
     $('#changePasswordForm')?.reset();
   }catch(err){
-    const msg = err?.code === 'auth/requires-recent-login'
-      ? 'Por segurança, saia e entre novamente com a senha padrão para trocar a senha.'
-      : (err?.message || err);
-    toast('Erro ao trocar senha: '+msg,'error');
+    toast('Erro ao trocar senha: '+(err?.message || err),'error');
   }
 }
 function registroAutorDisplay(r={}){
@@ -536,22 +621,23 @@ async function carregarAlunos(){ const snap=await getDocs(query(collection(db,co
 async function carregarConfig(){ const ref=doc(db,colecoes.config,'geral'); const s=await getDoc(ref); state.config=s.exists()?s.data():{}; $('#configCopia').value=state.config.emailCopia||''; $('#configUnidade').value=state.config.unidade||'SESI Dom Bosco'; }
 async function salvarConfig(){ await setDoc(doc(db,colecoes.config,'geral'),{emailCopia:$('#configCopia').value.trim(),unidade:$('#configUnidade').value.trim(),updatedAt:serverTimestamp()},{merge:true}); toast('Configurações salvas.'); carregarConfig(); }
 async function carregarPerfil(){
+  if(!state.user?.uid){ await logoutInterno(); return; }
   const ref=doc(db,colecoes.usuarios,state.user.uid);
   const s=await getDoc(ref);
   if(s.exists()){
-    state.profile=s.data();
+    state.profile={id:state.user.uid, ...s.data()};
   }else{
-    // Usuário existe no Authentication, mas foi removido/desautorizado no sistema.
     state.profile={role:'bloqueado', ativo:false};
     toast('Usuário não autorizado ou removido pelo administrador.','error');
-    await signOut(auth);
+    await logoutInterno();
     return;
   }
-  if(state.profile.ativo===false){ toast('Usuário desativado. Procure o administrador.','error'); await signOut(auth); return; }
+  if(state.profile.ativo===false){ toast('Usuário desativado. Procure o administrador.','error'); await logoutInterno(); return; }
   $('#userLabel').textContent=usuarioDisplay();
   controlarModalSenha();
   $$('.admin-only').forEach(e=>e.style.display=labelRole()==='admin'?'block':'none');
 }
+
 
 function aplicarPermissoes(){
   const role=labelRole();
@@ -989,6 +1075,7 @@ Ele será removido do acesso ao sistema.`)) return;
 }
 async function criarUsuarioAdmin(ev){
   ev.preventDefault();
+  await garantirAuthAnonima();
   if(labelRole()!=='admin'){ toast('Apenas administradores podem criar usuários.','error'); return; }
   const nome=$('#adminUserNome').value.trim();
   const usuarioRaw=$('#adminUserUsuario')?.value?.trim() || '';
@@ -996,29 +1083,34 @@ async function criarUsuarioAdmin(ev){
   const senha=$('#adminUserSenhaPadrao').value;
   const role=$('#adminUserPerfil').value;
   if(!nome || !usuario || senha.length<6){ toast('Informe nome, usuário e senha padrão com pelo menos 6 caracteres.','error'); return; }
-  const authEmail = usuarioParaEmailAuth(usuario);
-  let secondaryApp=null;
-  try{
-    secondaryApp = initializeApp(firebaseConfig, 'secondary-'+Date.now());
-    const secondaryAuth = getAuth(secondaryApp);
-    const cred = await createUserWithEmailAndPassword(secondaryAuth,authEmail,senha);
-    await setDoc(doc(db,colecoes.usuarios,cred.user.uid),{nome,usuario,username:usuario,authEmail,email:authEmail,role,ativo:true,trocarSenhaObrigatoria:true,senhaInicial:true,createdAt:serverTimestamp(),criadoPor:usuarioDisplay()},{merge:true});
-    toast('Usuário criado com sucesso. Ele deverá trocar a senha no primeiro acesso.');
-    $('#adminUserForm').reset();
-    if($('#adminUserSenhaPadrao')) $('#adminUserSenhaPadrao').value='Sesi@123456';
-    await carregarUsuarios();
-  }catch(err){
-    let msg = err?.message || err;
-    if(String(msg).includes('auth/email-already-in-use')) msg = 'Este usuário já existe.';
-    toast('Erro ao criar usuário: '+msg,'error');
-  }finally{
-    if(secondaryApp) try{ await deleteApp(secondaryApp); }catch(e){}
-  }
+  const uid = usuarioDocId(usuario);
+  const existe = await getDoc(doc(db,colecoes.usuarios,uid));
+  if(existe.exists()){ toast('Este usuário já existe.','error'); return; }
+  const salt = crypto.randomUUID();
+  const senhaHash = await hashSenha(senha, salt);
+  await setDoc(doc(db,colecoes.usuarios,uid),{
+    nome, usuario, username:usuario, role, perfil:role, ativo:true,
+    salt, senhaHash, authInterno:true,
+    trocarSenhaObrigatoria:true, mustChangePassword:true, senhaInicial:true,
+    createdAt:serverTimestamp(), criadoPor:usuarioDisplay()
+  },{merge:true});
+  toast('Usuário criado com sucesso. Ele deverá trocar a senha no primeiro acesso.');
+  $('#adminUserForm').reset();
+  if($('#adminUserSenhaPadrao')) $('#adminUserSenhaPadrao').value='Sesi@123456';
+  await carregarUsuarios();
 }
 
+
 aplicarMascarasData();
-$('#loginForm').addEventListener('submit',async e=>{ e.preventDefault(); try{ const usuario=$('#loginUsuario').value; await signInWithEmailAndPassword(auth,usuarioParaEmailAuth(usuario),$('#loginPassword').value); }catch(err){toast('Erro no login: usuário ou senha inválidos.','error')} });
+$('#loginForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  try{ await loginInterno($('#loginUsuario').value, $('#loginPassword').value); }
+  catch(err){ toast('Erro no login: '+(err?.message || 'usuário ou senha inválidos.'),'error'); }
+});
 if($('#changePasswordForm')) $('#changePasswordForm').addEventListener('submit',trocarSenhaInicial);
-$('#logoutBtn').onclick=()=>signOut(auth); $('#menuBtn').onclick=()=>$('.sidebar').classList.toggle('open'); $$('.nav').forEach(b=>b.onclick=()=>trocarPagina(b.dataset.page));
+$('#logoutBtn').onclick=()=>logoutInterno(); $('#menuBtn').onclick=()=>$('.sidebar').classList.toggle('open'); $$('.nav').forEach(b=>b.onclick=()=>trocarPagina(b.dataset.page));
 $('#turmaSelect').onchange=preencherAlunos; $('#alunoSelect').onchange=atualizarResponsaveis; if($('#profTurmaSelect')) $('#profTurmaSelect').onchange=preencherAlunosProfessor; if($('#profAlunoSelect')) $('#profAlunoSelect').onchange=atualizarAlunoProfessor; $('#registroForm').onsubmit=salvarRegistro; if($('#professorForm')) $('#professorForm').onsubmit=salvarRegistroProfessor; $('#limparForm').onclick=()=>{ $('#registroForm').reset(); renderControleSection(); }; if($('#limparProfessorForm')) $('#limparProfessorForm').onclick=()=>{ $('#professorForm').reset(); const pn=$('#professorNome'); if(pn) pn.value=state.profile.nome || state.user.email; }; $('#aplicarFiltros').onclick=renderHistorico; $('#exportarCsv').onclick=exportarCsv; if($('#atualizarDashboard')) $('#atualizarDashboard').onclick=renderDashboard; if($('#dashMesDetalhe')) $('#dashMesDetalhe').onchange=renderDashboard; if($('#limparDashboard')) $('#limparDashboard').onclick=()=>{ ['#dashInicio','#dashFim','#dashOrigem','#dashMesDetalhe'].forEach(s=>{ if($(s)) $(s).value=''; }); if($('#dashTurma')) $('#dashTurma').value=''; renderDashboard(); }; $('#salvarAluno').onclick=salvarAluno; $('#importarAlunos').onclick=importarAlunos; $('#importarHistorico').onclick=importarHistorico; $('#importarAlunosArquivo').onclick=importarAlunosArquivo; $('#importarHistoricoArquivo').onclick=importarHistoricoArquivo; $('#adminUserForm').addEventListener('submit',criarUsuarioAdmin); $('#salvarConfig').onclick=salvarConfig; $('#limparBanco').onclick=limparBancoDados; $('#modalClose').onclick=fecharModal; $('#modalBackdrop').onclick=fecharModal;
-onAuthStateChanged(auth,async user=>{ state.user=user; $('#loginScreen').classList.toggle('hidden',!!user); $('#app').classList.toggle('hidden',!user); if(user){ await init(); await carregarPerfil(); applyRolePermissions(); await carregarConfig(); await carregarAlunos(); await atualizarHistorico(); trocarPagina(paginaInicialPorPerfil()); } });
+garantirAuthAnonima().then(async()=>{
+  await criarAdminInicialSeNecessario().catch(()=>{});
+  await tentarRestaurarSessao();
+}).catch(err=>toast('Erro ao iniciar autenticação segura: '+(err?.message||err),'error')); 

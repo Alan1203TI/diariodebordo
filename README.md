@@ -47,3 +47,32 @@ No painel Admin, crie usuários informando:
 - senha padrão.
 
 No primeiro acesso, o usuário será obrigado a trocar a senha antes de utilizar o sistema.
+
+
+## Login interno por usuário e senha
+
+Esta versão não usa Firebase Authentication para os usuários do sistema. O login é feito pela coleção `usuarios` no Firestore, usando usuário + senha criptografada por hash.
+
+Usuário administrador inicial criado automaticamente:
+
+- Usuário: `admin`
+- Senha: `Sesi@123456`
+
+No primeiro acesso, o sistema exige a troca da senha.
+
+### Regras do Firestore
+Publique o arquivo `firestore.rules` incluído neste ZIP. Como o login é interno ao app, as regras precisam permitir acesso ao Firestore sem Firebase Authentication. Use este modelo somente em ambiente controlado.
+
+## Autenticação interna reforçada
+
+Esta versão usa login interno por **usuário + senha** na coleção `usuarios`, com senha armazenada por hash SHA-256 + salt e troca obrigatória no primeiro acesso.
+
+Também foi adicionado Firebase Authentication **anônimo** por trás do sistema para que o Firestore não fique com regras públicas (`if true`). Publique o arquivo `firestore.rules` desta versão no Firebase.
+
+Admin inicial:
+- Usuário: `admin`
+- Senha: `Sesi@123456`
+
+No primeiro login será solicitada a troca de senha.
+
+Observação: por ser um sistema estático em GitHub Pages, a validação final de perfis ainda acontece no aplicativo. Para uma segurança corporativa completa no banco por perfil, o próximo passo ideal é usar Cloud Functions/custom claims ou um backend.

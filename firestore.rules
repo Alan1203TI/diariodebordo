@@ -1,30 +1,39 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() { return request.auth != null; }
-    function userDoc() { return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)); }
-    function isAdmin() { return signedIn() && userDoc().data.role == 'admin'; }
-
-    match /usuarios/{uid} {
-      allow read: if signedIn();
-      allow create: if isAdmin();
-      allow update, delete: if isAdmin() || request.auth.uid == uid;
+    function signedIn() {
+      return request.auth != null;
     }
 
-    match /alunos/{id} {
-      allow read: if signedIn();
-      allow create, update, delete: if isAdmin();
+    // Esta versão usa login interno no app + Firebase Auth anônimo para impedir acesso totalmente público.
+    // As permissões de perfil continuam sendo aplicadas pela interface do sistema.
+    // Para proteção corporativa completa por perfil no Firestore, é necessário Cloud Functions/custom claims.
+    match /usuarios/{userId} {
+      allow read, write: if signedIn();
     }
 
-    match /ocorrencias/{id} {
-      allow read: if signedIn();
-      allow create: if signedIn();
-      allow update, delete: if isAdmin();
+    match /alunos/{docId} {
+      allow read, write: if signedIn();
     }
 
-    match /configuracoes/{id} {
-      allow read: if signedIn();
-      allow write: if isAdmin();
+    match /ocorrencias/{docId} {
+      allow read, write: if signedIn();
+    }
+
+    match /configuracoes/{docId} {
+      allow read, write: if signedIn();
+    }
+
+    match /importacoes/{docId} {
+      allow read, write: if signedIn();
+    }
+
+    match /auditoria/{docId} {
+      allow read, write: if signedIn();
+    }
+
+    match /{document=**} {
+      allow read, write: if signedIn();
     }
   }
 }
