@@ -1,0 +1,112 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userPath() {
+      return /databases/$(database)/documents/usuarios/$(request.auth.uid);
+    }
+
+    function hasProfile() {
+      return signedIn() && exists(userPath());
+    }
+
+    function userData() {
+      return get(userPath()).data;
+    }
+
+    function role() {
+      return hasProfile() ? (
+        userData().role != null ? userData().role : userData().perfil
+      ) : "";
+    }
+
+    function activeUser() {
+      return hasProfile() && userData().ativo != false;
+    }
+
+    function isAdmin() {
+      return activeUser() && role() == "admin";
+    }
+
+    function isPedagogia() {
+      return activeUser() && role() == "pedagogia";
+    }
+
+    function isDisciplinario() {
+      return activeUser() && role() == "disciplinario";
+    }
+
+    function isProfessor() {
+      return activeUser() && role() == "professor";
+    }
+
+    // Perfil de usuários.
+    // Qualquer usuário autenticado pode ler perfis para o app montar permissões.
+    // Apenas admin edita outros perfis. O próprio usuário pode criar seu perfil inicial.
+    match /usuarios/{userId} {
+      allow read: if signedIn();
+      allow create: if isAdmin() || (signedIn() && request.auth.uid == userId);
+      allow update: if isAdmin() || (activeUser() && request.auth.uid == userId);
+      allow delete: if isAdmin() && request.auth.uid != userId;
+    }
+
+    match /alunos/{document} {
+      allow read: if activeUser();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /ocorrencias/{document} {
+      allow read: if activeUser();
+      allow create: if isAdmin() || isDisciplinario() || isProfessor();
+      allow update, delete: if isAdmin();
+    }
+
+    match /registros/{document} {
+      allow read: if activeUser();
+      allow create: if isAdmin() || isDisciplinario();
+      allow update, delete: if isAdmin();
+    }
+
+    match /registrosProfessor/{document} {
+      allow read: if activeUser();
+      allow create: if isAdmin() || isProfessor();
+      allow update, delete: if isAdmin();
+    }
+
+    match /historico/{document} {
+      allow read: if activeUser();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /configuracoes/{document} {
+      allow read: if activeUser();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /dashboard/{document} {
+      allow read: if activeUser();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /importacoes/{document} {
+      allow read: if isAdmin() || isPedagogia();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /logs/{document} {
+      allow create: if activeUser();
+      allow read: if isAdmin() || isPedagogia();
+      allow update, delete: if false;
+    }
+
+    // Bloqueia qualquer coleção não prevista.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
