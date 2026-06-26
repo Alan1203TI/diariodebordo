@@ -58,40 +58,6 @@ async function loginFirebaseEmail(email, senha){
   await iniciarSessaoAutenticada();
 }
 
-async function registrarPrimeiroAdmin(ev){
-  ev.preventDefault();
-  const nome = $('#bootstrapAdminNome')?.value?.trim() || 'Administrador';
-  const email = $('#bootstrapAdminEmail')?.value?.trim().toLowerCase() || '';
-  const senha = $('#bootstrapAdminSenha')?.value || '';
-  if(!email || !email.includes('@') || senha.length < 6){
-    toast('Informe e-mail válido e senha com pelo menos 6 caracteres.','error');
-    return;
-  }
-  try{
-    const adminExiste = await existeAlgumAdmin().catch(()=>false);
-    if(adminExiste){
-      toast('Já existe administrador cadastrado. Entre com o usuário admin ou peça a ele para criar seu acesso.','error');
-      return;
-    }
-    const cred = await createUserWithEmailAndPassword(auth, email, senha);
-    state.user = cred.user;
-    await setDoc(doc(db, colecoes.usuarios, cred.user.uid), {
-      nome, email, role:'admin', perfil:'admin', ativo:true,
-      trocarSenhaObrigatoria:false, mustChangePassword:false, senhaInicial:false,
-      criadoPeloSite:true, observacao:'Primeiro administrador criado pela tela de login.',
-      createdAt:serverTimestamp()
-    }, {merge:true});
-    toast('Administrador criado com sucesso.');
-    await iniciarSessaoAutenticada();
-  }catch(err){
-    const code = err?.code || '';
-    let msg = err?.message || err;
-    if(code === 'auth/email-already-in-use') msg = 'Este e-mail já existe no Firebase Authentication. Tente entrar com ele ou use outro e-mail.';
-    if(code === 'auth/weak-password') msg = 'A senha precisa ter pelo menos 6 caracteres.';
-    toast('Erro ao criar administrador: '+msg,'error');
-  }
-}
-
 async function logoutFirebase(){
   await signOut(auth);
 }
@@ -1114,8 +1080,6 @@ $('#loginForm').addEventListener('submit',async e=>{
   try{ await loginFirebaseEmail($('#loginEmail').value, $('#loginPassword').value); }
   catch(err){ toast('Erro no login: '+(err?.message || 'usuário ou senha inválidos.'),'error'); }
 });
-if($('#showBootstrapAdmin')) $('#showBootstrapAdmin').onclick=()=>$('#bootstrapAdminForm')?.classList.toggle('hidden');
-if($('#bootstrapAdminForm')) $('#bootstrapAdminForm').addEventListener('submit', registrarPrimeiroAdmin);
 if($('#changePasswordForm')) $('#changePasswordForm').addEventListener('submit',trocarSenhaInicial);
 $('#logoutBtn').onclick=()=>logoutFirebase(); $('#menuBtn').onclick=()=>$('.sidebar').classList.toggle('open'); $$('.nav').forEach(b=>b.onclick=()=>trocarPagina(b.dataset.page));
 $('#turmaSelect').onchange=preencherAlunos; $('#alunoSelect').onchange=atualizarResponsaveis; if($('#profTurmaSelect')) $('#profTurmaSelect').onchange=preencherAlunosProfessor; if($('#profAlunoSelect')) $('#profAlunoSelect').onchange=atualizarAlunoProfessor; $('#registroForm').onsubmit=salvarRegistro; if($('#professorForm')) $('#professorForm').onsubmit=salvarRegistroProfessor; $('#limparForm').onclick=()=>{ $('#registroForm').reset(); renderControleSection(); }; if($('#limparProfessorForm')) $('#limparProfessorForm').onclick=()=>{ $('#professorForm').reset(); const pn=$('#professorNome'); if(pn) pn.value=state.profile.nome || state.user.email; }; $('#aplicarFiltros').onclick=renderHistorico; $('#exportarCsv').onclick=exportarCsv; if($('#atualizarDashboard')) $('#atualizarDashboard').onclick=renderDashboard; if($('#dashMesDetalhe')) $('#dashMesDetalhe').onchange=renderDashboard; if($('#limparDashboard')) $('#limparDashboard').onclick=()=>{ ['#dashInicio','#dashFim','#dashOrigem','#dashMesDetalhe'].forEach(s=>{ if($(s)) $(s).value=''; }); if($('#dashTurma')) $('#dashTurma').value=''; renderDashboard(); }; $('#salvarAluno').onclick=salvarAluno; $('#importarAlunos').onclick=importarAlunos; $('#importarHistorico').onclick=importarHistorico; $('#importarAlunosArquivo').onclick=importarAlunosArquivo; $('#importarHistoricoArquivo').onclick=importarHistoricoArquivo; $('#adminUserForm').addEventListener('submit',criarUsuarioAdmin); $('#salvarConfig').onclick=salvarConfig; $('#limparBanco').onclick=limparBancoDados; $('#modalClose').onclick=fecharModal; $('#modalBackdrop').onclick=fecharModal;
